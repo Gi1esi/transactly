@@ -19,9 +19,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       accountNumber: '1007 1355 44',
       userName: 'Grace',
     ),
-    Center(child: Text('Category Analytics Page', style: TextStyle(fontSize: 24))),
-    Center(child: Text('Summary Page', style: TextStyle(fontSize: 24))),
-    Center(child: Text('Settings Page', style: TextStyle(fontSize: 24))),
+    const Center(child: Text('Category Analytics Page', style: TextStyle(fontSize: 24))),
+    const Center(child: Text('Summary Page', style: TextStyle(fontSize: 24))),
+    const Center(child: Text('Settings Page', style: TextStyle(fontSize: 24))),
   ];
 
   @override
@@ -50,7 +50,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   void _onItemTapped(int index) {
     if (_selectedIndex == index) return;
 
-    // Animate fade out, then switch page, then fade in
     _animationController.reverse().then((_) {
       setState(() => _selectedIndex = index);
       _animationController.forward();
@@ -59,10 +58,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final secondary = theme.colorScheme.secondary;
 
     return SafeArea(
       child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
@@ -72,14 +74,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               Text(
                 'Transactly',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: primary,
                   fontFamily: 'Poppins',
                 ),
               ),
               CircleAvatar(
-                backgroundColor: primary.withOpacity(0.1),
+                backgroundColor: primary.withOpacity(0.15),
                 child: Text(
                   'GG',
                   style: TextStyle(
@@ -98,47 +100,46 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           child: _pages[_selectedIndex],
         ),
         bottomNavigationBar: Container(
-  color: Colors.transparent, // Transparent container background
-  child: BottomNavigationBar(
-    backgroundColor: Colors.transparent, // Transparent BottomNavigationBar
-    type: BottomNavigationBarType.fixed,
-    currentIndex: _selectedIndex,
-    onTap: _onItemTapped,
-    selectedItemColor: primary,
-    unselectedItemColor: primary,
-    selectedLabelStyle: const TextStyle(
-      fontWeight: FontWeight.w600,
-      fontFamily: 'Poppins',
-      fontSize: 13,
-    ),
-    unselectedLabelStyle: const TextStyle(
-      fontWeight: FontWeight.w400,
-      fontFamily: 'Poppins',
-      fontSize: 12,
-    ),
-    showUnselectedLabels: true,
-    elevation: 0,
-    items: const [
-      BottomNavigationBarItem(
-        icon: Icon(Icons.home_filled),
-        label: 'Home',
-      ),
-      BottomNavigationBarItem(
-        icon: Icon(Icons.account_balance_wallet_outlined),
-        label: 'Categories',
-      ),
-      BottomNavigationBarItem(
-        icon: Icon(Icons.analytics_outlined),
-        label: 'Summary',
-      ),
-      BottomNavigationBarItem(
-        icon: Icon(Icons.settings_outlined),
-        label: 'Settings',
-      ),
-    ],
-  ),
-),
-
+          color: Colors.transparent,
+          child: BottomNavigationBar(
+            backgroundColor: Colors.transparent,
+            type: BottomNavigationBarType.fixed,
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            selectedItemColor: secondary,
+            unselectedItemColor: primary.withOpacity(0.7),
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Poppins',
+              fontSize: 13,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w400,
+              fontFamily: 'Poppins',
+              fontSize: 12,
+            ),
+            showUnselectedLabels: true,
+            elevation: 0,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_filled),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.account_balance_wallet_outlined),
+                label: 'Categories',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.analytics_outlined),
+                label: 'Summary',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings_outlined),
+                label: 'Settings',
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
