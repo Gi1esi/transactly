@@ -1,4 +1,4 @@
-# bank_mvp
+# Transactly 
 
 A new Flutter project.
 
