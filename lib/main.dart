@@ -10,35 +10,47 @@ void main() async {
   Hive.registerAdapter(TransactionAdapter());
   await Hive.openBox<Transaction>('transactions');
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
+    const Color darkBg = Color(0xFF0F172A);     // background color
+    const Color primary = Color(0xFF208888);    // primary color
+    const Color secondary = Color(0xFFFF644F);  // secondary color
+
     return MaterialApp(
       title: 'Bank SMS Summarizer',
       theme: ThemeData(
-        primarySwatch: Colors.blue,          // ← your main theme color
-        colorScheme: ColorScheme.fromSwatch(
-          primarySwatch: Colors.blue,
-        ).copyWith(
-          secondary: Colors.blueAccent,      // ← accent color if you need it
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: darkBg,
+        primaryColor: primary,
+        colorScheme: ColorScheme.dark(
+          primary: primary,
+          secondary: secondary,
+          background: darkBg,
+          surface: const Color(0xFF1E293B), // slightly lighter for cards
         ),
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.blue,      // ← ensures all AppBars are blue
-          foregroundColor: Colors.white,     // ← text/icon color in AppBar
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Colors.white,
         ),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Colors.blue,      // ← nav bar background
-          selectedItemColor: Colors.white,   // ← selected icon/text color
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.transparent,
+          selectedItemColor: primary,
           unselectedItemColor: Colors.white70,
         ),
+        cardColor: const Color(0xFF1E293B),
+        textTheme: ThemeData.dark().textTheme.apply(
+          bodyColor: Colors.white,
+          displayColor: Colors.white,
+        ),
       ),
-      home: HomePage(),
+      home: const HomePage(),
     );
   }
 }
-

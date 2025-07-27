@@ -21,7 +21,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: Duration(milliseconds: 700));
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
     _fadeInAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
   }
@@ -36,7 +36,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
     setState(() {
       selectedFilterIndex = index;
     });
-    // Add any filter logic here
+    // Add filter logic here
   }
 
   @override
@@ -44,39 +44,40 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final secondary = theme.colorScheme.secondary;
+    final onBackground = Colors.white.withOpacity(0.9);
 
     return SafeArea(
       child: SingleChildScrollView(
-        physics: BouncingScrollPhysics(),
-        padding: EdgeInsets.symmetric(vertical: 20),
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         child: FadeTransition(
           opacity: _fadeInAnimation,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Bank Card
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: BankCard(
                   accountNumber: widget.accountNumber,
                   userName: widget.userName,
+                  primary: primary,
                 ),
               ),
 
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-              // Filter Chips
               Center(
                 child: FilterChipsModern(
                   filters: filters,
                   selectedIndex: selectedFilterIndex,
                   onSelect: onFilterSelected,
+                  primary: primary,
+                  onBackground: onBackground,
                 ),
               ),
 
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-              // Summary Cards
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
@@ -89,7 +90,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                         outlined: false,
                       ),
                     ),
-                    SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: SummaryCardModern(
                         label: 'MWK 85,000',
@@ -102,9 +103,8 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                 ),
               ),
 
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
 
-              // Recent Transactions Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
@@ -112,19 +112,18 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: primary,
+                    color: onBackground,
                     fontFamily: 'Poppins',
                   ),
                 ),
               ),
 
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-              // Recent Transactions List
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Column(
-                  children: [
+                  children: const [
                     RecentTransactionModern(
                       isIncome: true,
                       description: 'Salary',
@@ -137,7 +136,6 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                       amount: 'MWK 20,000',
                       date: '24 Jul 2025',
                     ),
-                    // Add more transactions here
                   ],
                 ),
               ),
@@ -152,125 +150,97 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
 class BankCard extends StatelessWidget {
   final String accountNumber;
   final String userName;
+  final Color primary;
 
   const BankCard({
     Key? key,
     required this.accountNumber,
     required this.userName,
+    required this.primary,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final baseBlue = Color(0xFF0D47A1);
-    final highlightBlue = Color(0xFF1976D2);
-
     return Container(
       height: 220,
-      padding: EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
-          colors: [baseBlue, highlightBlue],
+          colors: [
+            primary.withOpacity(0.9),
+            primary.withOpacity(0.6),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: highlightBlue.withOpacity(0.35),
-            offset: Offset(0, 10),
-            blurRadius: 18,
+            color: primary.withOpacity(0.3),
+            offset: const Offset(0, 8),
+            blurRadius: 16,
           )
         ],
       ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Subtle decorative circles (glassmorphic style)
-          Positioned(
-            top: 30,
-            right: 20,
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.06),
-                shape: BoxShape.circle,
-              ),
+          Text(
+            maskAccountNumber(accountNumber),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 2,
+              fontFamily: 'Poppins',
             ),
           ),
-          Positioned(
-            bottom: 20,
-            left: 10,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.04),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                maskAccountNumber(accountNumber),
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 2,
-                  fontFamily: 'Poppins',
-                ),
-              ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.white24,
-                        child: Text(
-                          userName[0].toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.white24,
+                    child: Text(
+                      userName[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        fontFamily: 'Poppins',
                       ),
-                      SizedBox(width: 16),
-                      Text(
-                        'Hello, $userName!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                  Icon(Icons.credit_card, color: Colors.white70, size: 36),
+                  const SizedBox(width: 16),
+                  Text(
+                    'Hello, $userName!',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                 ],
               ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Text(
-                  'VISA',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 4,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
+              const Icon(Icons.credit_card, color: Colors.white70, size: 36),
             ],
+          ),
+          const Align(
+            alignment: Alignment.bottomRight,
+            child: Text(
+              'VISA',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 4,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
         ],
       ),
@@ -282,27 +252,29 @@ class FilterChipsModern extends StatelessWidget {
   final List<String> filters;
   final int selectedIndex;
   final ValueChanged<int> onSelect;
+  final Color primary;
+  final Color onBackground;
 
   const FilterChipsModern({
     Key? key,
     required this.filters,
     required this.selectedIndex,
     required this.onSelect,
+    required this.primary,
+    required this.onBackground,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
     return Wrap(
       spacing: 12,
       children: List.generate(filters.length, (index) {
         final isSelected = index == selectedIndex;
 
         return AnimatedContainer(
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(7),
             gradient: isSelected
@@ -314,15 +286,6 @@ class FilterChipsModern extends StatelessWidget {
                 : null,
             color: isSelected ? null : Colors.transparent,
             border: Border.all(color: primary, width: 2),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: primary.withOpacity(0.4),
-                      blurRadius: 10,
-                      offset: Offset(0, 5),
-                    )
-                  ]
-                : [],
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
@@ -330,7 +293,7 @@ class FilterChipsModern extends StatelessWidget {
             child: Text(
               filters[index],
               style: TextStyle(
-                color: isSelected ? Colors.white : primary,
+                color: isSelected ? Colors.white : onBackground,
                 fontWeight: FontWeight.w700,
                 fontSize: 15,
                 fontFamily: 'Poppins',
@@ -362,21 +325,12 @@ class SummaryCardModern extends StatelessWidget {
     final textColor = outlined ? color : Colors.white;
 
     return AnimatedContainer(
-      duration: Duration(milliseconds: 400),
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      duration: const Duration(milliseconds: 400),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: outlined ? Colors.transparent : color,
         borderRadius: BorderRadius.circular(22),
         border: outlined ? Border.all(color: color, width: 2) : null,
-        boxShadow: outlined
-            ? []
-            : [
-                BoxShadow(
-                  color: color.withOpacity(0.5),
-                  offset: Offset(0, 8),
-                  blurRadius: 20,
-                ),
-              ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -388,14 +342,9 @@ class SummaryCardModern extends StatelessWidget {
               fontWeight: FontWeight.bold,
               fontSize: 16,
               fontFamily: 'Poppins',
-              letterSpacing: 0.7,
             ),
           ),
-          Icon(
-            icon,
-            color: textColor,
-            size: 26,
-          ),
+          Icon(icon, color: textColor, size: 26),
         ],
       ),
     );
@@ -418,24 +367,17 @@ class RecentTransactionModern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final incomeColor = Colors.green.shade600;
-    final expenseColor = Colors.red.shade600;
-    final bgColor = isIncome ? incomeColor.withOpacity(0.15) : expenseColor.withOpacity(0.15);
+    final theme = Theme.of(context);
+    final incomeColor = theme.colorScheme.primary;
+    final expenseColor = theme.colorScheme.secondary;
     final iconColor = isIncome ? incomeColor : expenseColor;
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 12),
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: iconColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: iconColor.withOpacity(0.2),
-            blurRadius: 8,
-            offset: Offset(0, 5),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -445,13 +387,6 @@ class RecentTransactionModern extends StatelessWidget {
             decoration: BoxDecoration(
               color: iconColor,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: iconColor.withOpacity(0.6),
-                  blurRadius: 6,
-                  offset: Offset(0, 3),
-                ),
-              ],
             ),
             child: Icon(
               isIncome ? Icons.arrow_downward : Icons.arrow_upward,
@@ -459,27 +394,27 @@ class RecentTransactionModern extends StatelessWidget {
               size: 28,
             ),
           ),
-          SizedBox(width: 18),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   description,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
                     fontFamily: 'Poppins',
-                    color: Colors.grey[900],
+                    color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   date,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey[600],
+                    color: Colors.white.withOpacity(0.7),
                     fontFamily: 'Poppins',
                   ),
                 ),
@@ -493,7 +428,6 @@ class RecentTransactionModern extends StatelessWidget {
               fontSize: 18,
               fontFamily: 'Poppins',
               color: iconColor,
-              letterSpacing: 0.8,
             ),
           ),
         ],
