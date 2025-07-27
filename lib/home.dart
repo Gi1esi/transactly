@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
+import 'all_transactions.dart';
+import 'categories_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,8 +21,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       accountNumber: '1007 1355 44',
       userName: 'Grace',
     ),
-    const Center(child: Text('Category Analytics Page', style: TextStyle(fontSize: 24))),
-    const Center(child: Text('Summary Page', style: TextStyle(fontSize: 24))),
+    CategoryAnalysisPage(),
+    SummaryPage(),
     const Center(child: Text('Settings Page', style: TextStyle(fontSize: 24))),
   ];
 
