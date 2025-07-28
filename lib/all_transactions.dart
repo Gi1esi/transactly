@@ -184,12 +184,15 @@ class _SummaryPageState extends State<SummaryPage> {
                       itemCount: filteredTransactions.length,
                       itemBuilder: (context, index) {
                         final tx = filteredTransactions[index];
-                        return RecentTransactionModern(
-                          isIncome: tx.isIncome,
-                          description: tx.description,
-                          amount: tx.amountFormatted,
-                          date: tx.dateFormatted,
-                        );
+                       return RecentTransactionModern(
+                        isIncome: tx.isIncome,
+                        description: tx.description,
+                        amount: tx.amountFormatted,
+                        date: tx.dateFormatted,
+                        onEditCategory: () {
+                          // TODO: Open category picker for this transaction
+                        },
+                      );
                       },
                     ),
             ),
@@ -207,6 +210,8 @@ class RecentTransactionModern extends StatelessWidget {
   final String description;
   final String amount;
   final String date;
+  final String category;
+  final VoidCallback onEditCategory;
 
   const RecentTransactionModern({
     Key? key,
@@ -214,6 +219,8 @@ class RecentTransactionModern extends StatelessWidget {
     required this.description,
     required this.amount,
     required this.date,
+    this.category = 'Uncategorized',
+    required this.onEditCategory,
   }) : super(key: key);
 
   @override
@@ -261,7 +268,7 @@ class RecentTransactionModern extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  date,
+                  '$date • $category',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -281,6 +288,10 @@ class RecentTransactionModern extends StatelessWidget {
               color: iconColor,
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white70),
+            onPressed: onEditCategory,
+          )
         ],
       ),
     );

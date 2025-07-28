@@ -1,3 +1,5 @@
+import com.android.build.gradle.LibraryExtension
+
 allprojects {
     repositories {
         google()
@@ -11,7 +13,17 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
+
+    // Force namespace for telephony plugin early
+    if (name.contains("telephony")) {
+        plugins.withId("com.android.library") {
+            extensions.configure<LibraryExtension>("android") {
+                namespace = "com.shounakmulay.telephony"
+            }
+        }
+    }
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
