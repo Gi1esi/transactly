@@ -120,25 +120,32 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
 
               const SizedBox(height: 12),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  children: const [
-                    RecentTransactionModern(
-                      isIncome: true,
-                      description: 'Salary',
-                      amount: 'MWK 120,000',
-                      date: '25 Jul 2025',
-                    ),
-                    RecentTransactionModern(
-                      isIncome: false,
-                      description: 'Groceries',
-                      amount: 'MWK 20,000',
-                      date: '24 Jul 2025',
-                    ),
-                  ],
-                ),
+             Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                children: [
+                  RecentTransactionModern(
+                    isIncome: true,
+                    description: 'Salary',
+                    amount: 'MWK 120,000',
+                    date: '25 Jul 2025',
+                    onEditCategory: () {
+                      // TODO: Open category picker here
+                    },
+                  ),
+                  RecentTransactionModern(
+                    isIncome: false,
+                    description: 'Groceries',
+                    amount: 'MWK 20,000',
+                    date: '24 Jul 2025',
+                    onEditCategory: () {
+                      // TODO: Open category picker here
+                    },
+                  ),
+                ],
               ),
+            )
+
             ],
           ),
         ),
@@ -232,7 +239,7 @@ class BankCard extends StatelessWidget {
           const Align(
             alignment: Alignment.bottomRight,
             child: Text(
-              'VISA',
+              'NBM',
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 24,
@@ -356,6 +363,8 @@ class RecentTransactionModern extends StatelessWidget {
   final String description;
   final String amount;
   final String date;
+  final String category;
+  final VoidCallback onEditCategory;
 
   const RecentTransactionModern({
     Key? key,
@@ -363,6 +372,8 @@ class RecentTransactionModern extends StatelessWidget {
     required this.description,
     required this.amount,
     required this.date,
+    this.category = 'Uncategorized',
+    required this.onEditCategory,
   }) : super(key: key);
 
   @override
@@ -410,7 +421,7 @@ class RecentTransactionModern extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  date,
+                  '$date • $category',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -430,6 +441,10 @@ class RecentTransactionModern extends StatelessWidget {
               color: iconColor,
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white70),
+            onPressed: onEditCategory,
+          )
         ],
       ),
     );

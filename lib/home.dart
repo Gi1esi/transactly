@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'all_transactions.dart';
 import 'categories_page.dart';
+import 'read_sms.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,7 +24,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     ),
     CategoryAnalysisPage(),
     SummaryPage(),
-    const Center(child: Text('Settings Page', style: TextStyle(fontSize: 24))),
+    SmsReaderPage(),
   ];
 
   @override

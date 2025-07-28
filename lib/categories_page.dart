@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'manage_categories.dart';
 
 class CategoryAnalysisPage extends StatefulWidget {
   const CategoryAnalysisPage({Key? key}) : super(key: key);
@@ -211,7 +212,14 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
 
           // Manage categories button
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ManageCategoriesPage(isExpense: isExpense),
+                ),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

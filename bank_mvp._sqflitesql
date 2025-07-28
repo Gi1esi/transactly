@@ -1,0 +1,41 @@
+CREATE TABLE users (
+  user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL
+);
+
+CREATE TABLE banks (
+  bank_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  sms_address_box TEXT NOT NULL
+);
+
+CREATE TABLE accounts (
+  account_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_number TEXT NOT NULL,
+  bank INTEGER,
+  user INTEGER,
+  FOREIGN KEY (bank) REFERENCES banks(bank_id) ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY (user) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE TABLE categories (
+  category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,  -- 'income' or 'expense'
+  icon_key TEXT NOT NULL,
+  color_hex TEXT NOT NULL
+);
+
+CREATE TABLE transactions (
+  transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  trans_id TEXT NOT NULL,
+  description TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  date TEXT NOT NULL,  -- store as ISO8601 string
+  effect TEXT NOT NULL, -- 'cr' or 'dr'
+  category INTEGER,
+  account INTEGER,
+  FOREIGN KEY (category) REFERENCES categories(category_id) ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY (account) REFERENCES accounts(account_id) ON DELETE SET NULL ON UPDATE CASCADE
+);
