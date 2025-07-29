@@ -46,4 +46,38 @@ class TransactionDao {
       whereArgs: [tx.id],
     );
   }
+
+  // NEW: Get total income/expense based on effect (cr or dr)
+  Future<double> getTotalByEffect(String effect, {DateTime? startDate}) async {
+  final db = await dbHelper.database;
+  String where = 'effect = ?';
+  List<Object?> args = [effect];
+
+  if (startDate != null) {
+    where += ' AND date >= ?';
+    args.add(startDate.toIso8601String());
+  }
+
+  final result = await db.query(
+    'transactions',
+    columns: ['SUM(amount) as total'],
+    where: where,
+    whereArgs: args,
+  );
+
+  final value = result.first['total'];
+  return value != null ? (value as num).toDouble() : 0.0;
+}
+
+
+  // NEW: Get recent transactions with a limit
+  Future<List<Transaction>> getRecentTransactions({int limit = 10}) async {
+    final db = await dbHelper.database;
+    final maps = await db.query(
+      'transactions',
+      orderBy: 'date DESC',
+      limit: limit,
+    );
+    return maps.map((m) => Transaction.fromMap(m)).toList();
+  }
 }
