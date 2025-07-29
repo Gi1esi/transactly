@@ -5,10 +5,11 @@ import 'transaction_model.dart';
 
 
 class HomePageWidget extends StatefulWidget {
-  const HomePageWidget({super.key, required this.accountNumber, required this.userName});
+  const HomePageWidget({super.key, required this.accountNumber, required this.userName, required this.bank});
 
   final String accountNumber;
   final String userName;
+  final String bank;
 
   @override
   State<HomePageWidget> createState() => _HomePageWidgetState();
@@ -93,6 +94,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                   accountNumber: widget.accountNumber,
                   userName: widget.userName,
                   primary: primary,
+                  bank: widget.bank,
                 ),
               ),
 
@@ -184,11 +186,13 @@ class BankCard extends StatelessWidget {
   final String accountNumber;
   final String userName;
   final Color primary;
+  final dynamic bank;
 
   const BankCard({
     Key? key,
     required this.accountNumber,
     required this.userName,
+    required this.bank,
     required this.primary,
   }) : super(key: key);
 
@@ -223,7 +227,7 @@ class BankCard extends StatelessWidget {
             maskAccountNumber(accountNumber),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w500,
               letterSpacing: 2,
               fontFamily: 'Poppins',
@@ -242,7 +246,7 @@ class BankCard extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 24,
+                        fontSize: 20,
                         fontFamily: 'Poppins',
                       ),
                     ),
@@ -252,7 +256,7 @@ class BankCard extends StatelessWidget {
                     'Hello, $userName!',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       fontFamily: 'Poppins',
                     ),
@@ -262,13 +266,13 @@ class BankCard extends StatelessWidget {
               const Icon(Icons.credit_card, color: Colors.white70, size: 36),
             ],
           ),
-          const Align(
+          Align(
             alignment: Alignment.bottomRight,
             child: Text(
-              'NBM',
-              style: TextStyle(
+              '$bank', // converts to string and uses runtime value
+              style: const TextStyle(
                 color: Colors.white70,
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 4,
                 fontFamily: 'Poppins',
@@ -366,18 +370,21 @@ class SummaryCardModern extends StatelessWidget {
         border: outlined ? Border.all(color: color, width: 2) : null,
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+        
+          
           Text(
             label,
             style: TextStyle(
               color: textColor,
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: 15,
               fontFamily: 'Poppins',
             ),
           ),
-          Icon(icon, color: textColor, size: 26),
+          const SizedBox(width: 8),
+          Icon(icon, color: textColor, size: 22),
         ],
       ),
     );

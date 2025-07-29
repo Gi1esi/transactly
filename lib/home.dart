@@ -4,6 +4,13 @@ import 'all_transactions.dart';
 import 'categories_page.dart';
 import 'read_sms.dart';
 import 'DatabaseViewerPage.dart';
+import 'account_dao.dart';
+import 'user_dao.dart';
+import 'bank_dao.dart';
+import 'account_model.dart';
+import 'user_model.dart';
+import 'bank_model.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,16 +25,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
 
-  final List<Widget> _pages = [
-    HomePageWidget(
-      accountNumber: '1007 1355 44',
-      userName: 'Grace',
-    ),
-    CategoryAnalysisPage(),
-    // SummaryPage(),
-    DatabaseViewerPage(),
-    SmsReaderPage(),
-  ];
+  String? accountNumber;
+  String? userName;
+  String? bankName;
+  bool isLoading = true; // Prevents UI until data is loaded
 
   @override
   void initState() {
@@ -44,6 +45,47 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
 
     _animationController.forward();
+    _loadUserAndAccount();
+  }
+
+  Future<void> _loadUserAndAccount() async {
+    final userDao = UserDao();
+    final accountDao = AccountDao();
+    final bankDao = BankDao();
+
+    final users = await userDao.getAllUsers();
+    if (users.isNotEmpty) {
+      final user = users.first;
+      print('DEBUG: Loaded user ${user.firstName} ${user.lastName} (ID: ${user.userId})');
+
+      final accounts = await accountDao.getAllAccounts();
+      print('DEBUG: Found ${accounts.length} accounts');
+
+      final account = accounts.firstWhere(
+        (a) => a.userId == user.userId,
+        orElse: () => Account(accountNumber: '', userId: user.userId),
+      );
+
+      final banks = await bankDao.getAllBanks();
+
+      final bank = banks.firstWhere(
+        (element) => element.bankId == account.bankId,
+        orElse: () => Bank(bankId: 0, name: 'Unknown Bank', smsAddressBox: '626626',),
+      );
+
+
+      print('DEBUG: Loaded account number ${account.accountNumber} for userId ${account.userId}');
+
+      setState(() {
+        accountNumber = account.accountNumber;
+        userName = user.firstName;
+        bankName = bank.name;
+        isLoading = false;
+      });
+    } else {
+      print('DEBUG: No users found in DB');
+      setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -67,6 +109,24 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final primary = theme.colorScheme.primary;
     final secondary = theme.colorScheme.secondary;
 
+    // Loader until DB query finishes
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final pages = [
+      HomePageWidget(
+        accountNumber: accountNumber ?? '',
+        userName: userName ?? '',
+        bank: bankName ?? '',
+      ),
+      CategoryAnalysisPage(),
+      DatabaseViewerPage(),
+      SmsReaderPage(),
+    ];
+
     return SafeArea(
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -88,7 +148,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               CircleAvatar(
                 backgroundColor: primary.withOpacity(0.15),
                 child: Text(
-                  'GG',
+                  (userName?.isNotEmpty == true)
+                      ? userName![0].toUpperCase()
+                      : 'U',
                   style: TextStyle(
                     color: primary,
                     fontWeight: FontWeight.bold,
@@ -102,48 +164,45 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         ),
         body: FadeTransition(
           opacity: _fadeAnimation,
-          child: _pages[_selectedIndex],
+          child: pages[_selectedIndex],
         ),
-        bottomNavigationBar: Container(
-          color: Colors.transparent,
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            type: BottomNavigationBarType.fixed,
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            selectedItemColor: secondary,
-            unselectedItemColor: primary.withOpacity(0.7),
-            selectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-              fontSize: 13,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.w400,
-              fontFamily: 'Poppins',
-              fontSize: 12,
-            ),
-            showUnselectedLabels: true,
-            elevation: 0,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_filled),
-                label: 'Home',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.account_balance_wallet_outlined),
-                label: 'Categories',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.analytics_outlined),
-                label: 'Summary',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.settings_outlined),
-                label: 'Settings',
-              ),
-            ],
+        bottomNavigationBar: BottomNavigationBar(
+          backgroundColor: Colors.transparent,
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          selectedItemColor: secondary,
+          unselectedItemColor: primary.withOpacity(0.7),
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Poppins',
+            fontSize: 13,
           ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w400,
+            fontFamily: 'Poppins',
+            fontSize: 12,
+          ),
+          showUnselectedLabels: true,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_filled),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              label: 'Categories',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.analytics_outlined),
+              label: 'Summary',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined),
+              label: 'Settings',
+            ),
+          ],
         ),
       ),
     );
