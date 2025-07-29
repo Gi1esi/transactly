@@ -113,26 +113,26 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
-                  children: [
-                    Expanded(
-                      child: SummaryCardModern(
-                        label: 'MWK ${totalIncome.toStringAsFixed(2)}',
-                        color: primary.withOpacity(0.85),
-                        icon: Icons.arrow_downward,
-                        outlined: false,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: SummaryCardModern(
-                        label: 'MWK ${totalExpense.toStringAsFixed(2)}',
-                        color: primary,
-                        icon: Icons.arrow_upward,
-                        outlined: true,
-                      ),
-                    ),
-                  ],
-                ),
+  children: [
+    Expanded(
+      child: SummaryCardModern(
+        label: formatAmount(totalIncome),
+        color: primary.withOpacity(0.85),
+        icon: Icons.arrow_downward,
+        outlined: false,
+      ),
+    ),
+    const SizedBox(width: 16),
+    Expanded(
+      child: SummaryCardModern(
+        label: formatAmount(totalExpense),
+        color: primary,
+        icon: Icons.arrow_upward,
+        outlined: true,
+      ),
+    ),
+  ],
+),
               ),
 
               const SizedBox(height: 32),
@@ -161,7 +161,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                           return RecentTransactionModern(
                             isIncome: txn.effect == 'cr',
                             description: txn.description,
-                            amount: 'MWK ${txn.amount.toStringAsFixed(2)}',
+                            amount: formatAmount(txn.amount),
                             date: txn.date,
                             category: 'Uncategorized',
                             onEditCategory: () {
@@ -419,8 +419,8 @@ class RecentTransactionModern extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 28,
+            height: 28,
             decoration: BoxDecoration(
               color: iconColor,
               borderRadius: BorderRadius.circular(12),
@@ -428,7 +428,7 @@ class RecentTransactionModern extends StatelessWidget {
             child: Icon(
               isIncome ? Icons.arrow_downward : Icons.arrow_upward,
               color: Colors.white,
-              size: 28,
+              size: 18,
             ),
           ),
           const SizedBox(width: 18),
@@ -440,7 +440,7 @@ class RecentTransactionModern extends StatelessWidget {
                   description,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 18,
+                    fontSize: 14,
                     fontFamily: 'Poppins',
                     color: Colors.white,
                   ),
@@ -449,7 +449,7 @@ class RecentTransactionModern extends StatelessWidget {
                 Text(
                   '$date • $category',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: Colors.white.withOpacity(0.7),
                     fontFamily: 'Poppins',
@@ -458,19 +458,38 @@ class RecentTransactionModern extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            amount,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              fontFamily: 'Poppins',
-              color: iconColor,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white70),
-            onPressed: onEditCategory,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                amount,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  fontFamily: 'Poppins',
+                  color: iconColor,
+                ),
+              ),
+              TextButton(
+                onPressed: onEditCategory,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(40, 20),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Edit',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           )
+
         ],
       ),
     );
