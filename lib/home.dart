@@ -3,6 +3,7 @@ import 'home_page.dart';
 import 'all_transactions.dart';
 import 'categories_page.dart';
 import 'read_sms.dart';
+import 'DatabaseViewerPage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,7 +24,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       userName: 'Grace',
     ),
     CategoryAnalysisPage(),
-    SummaryPage(),
+    // SummaryPage(),
+    DatabaseViewerPage(),
     SmsReaderPage(),
   ];
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:telephony/telephony.dart';
-import 'package:intl/intl.dart'; // Add intl: ^0.18.0 (or latest) to pubspec.yaml
+import 'package:intl/intl.dart';
 import 'database_helper.dart';
 
 class SmsReaderPage extends StatefulWidget {
@@ -26,13 +26,14 @@ class _SmsReaderPageState extends State<SmsReaderPage> {
     if (permissionsGranted) {
       fetchBankSms();
     } else {
-      // Handle permission denied
+      print('SMS permission denied');
     }
   }
 
+  // ✅ Fix: match both Acc: and Acct:
   String? extractAccountNumber(String? smsBody) {
     if (smsBody == null) return null;
-    final regExp = RegExp(r'Acc:\s*(\d{6,12})');
+    final regExp = RegExp(r'Acc[t]?:\s*(\d{6,12})');
     final match = regExp.firstMatch(smsBody);
     return match != null ? match.group(1) : null;
   }
@@ -41,42 +42,52 @@ class _SmsReaderPageState extends State<SmsReaderPage> {
     if (smsBody == null) return null;
 
     try {
-      final lines = smsBody.split('\n').map((line) => line.trim()).toList();
+      // Normalize text
+      final text = smsBody.replaceAll('\r', '').trim();
+      final lines = text.split('\n').map((l) => l.trim()).toList();
 
+      // ✅ Account number (Acc or Acct)
+      final accMatch = RegExp(r'Acc[t]?:\s*(\d{6,12})').firstMatch(text);
+      final accNum = accMatch != null ? accMatch.group(1) : null;
+
+      // ✅ Fix: Allow amounts with or without decimals
+      final amtMatch = RegExp(r'MWK\s*([\d,]+(?:\.\d+)?)(CR|DR)', caseSensitive: false)
+          .firstMatch(text);
+      final amount = amtMatch != null ? double.parse(amtMatch.group(1)!.replaceAll(',', '')) : 0.0;
+      final effect = amtMatch != null ? amtMatch.group(2)!.toLowerCase() : 'cr';
+
+      // ✅ Transaction ID with fallback
       final refLine = lines.firstWhere((l) => l.startsWith('Ref:'), orElse: () => '');
-      final transId = refLine.isNotEmpty ? refLine.substring(4).split('\\').first.trim() : '';
+      final transId = refLine.isNotEmpty
+          ? refLine.substring(4).split('\\').first.trim()
+          : 'TXN-${DateTime.now().millisecondsSinceEpoch}';
 
+      // ✅ Description nullable
       final descLine = lines.firstWhere((l) => l.startsWith('Desc:'), orElse: () => '');
-      final description = descLine.isNotEmpty ? descLine.substring(5).trim() : '';
+      final description = descLine.isNotEmpty ? descLine.substring(5).trim() : null;
 
-      final amountLine = lines.firstWhere((l) => l.contains('MWK'), orElse: () => '');
-      final amountMatch = RegExp(r'MWK\s*([\d,]+\.?\d*)').firstMatch(amountLine);
-      double amount = 0;
-      if (amountMatch != null) {
-        final rawAmount = amountMatch.group(1)?.replaceAll(',', '') ?? '0';
-        amount = double.parse(rawAmount);
-      }
-
-      final effect = amountLine.length >= 2
-          ? amountLine.substring(amountLine.length - 2).toLowerCase()
-          : '';
-
+      // ✅ Date parsing
       final dateLine = lines.firstWhere((l) => l.startsWith('Date/Time:'), orElse: () => '');
       DateTime date = DateTime.now();
       if (dateLine.isNotEmpty) {
-        final dateStr = dateLine.substring(10).trim(); // e.g., '28/07/25 12:30'
+        final dateStr = dateLine.substring(10).trim();
         final formatter = DateFormat('dd/MM/yy HH:mm');
         date = formatter.parse(dateStr);
       }
+
+      print('Parsed transaction: ID=$transId, Amount=$amount, Effect=$effect, Desc=$description');
 
       return {
         'trans_id': transId,
         'description': description,
         'amount': amount,
         'date': date.toIso8601String(),
-        'effect': effect == 'dr' ? 'dr' : 'cr',
+        'effect': effect,
+        'account_number': accNum,
       };
-    } catch (e) {
+    } catch (e, st) {
+      print('❌ Failed to parse SMS: $smsBody');
+      print('Error: $e\n$st');
       return null;
     }
   }
@@ -102,18 +113,28 @@ class _SmsReaderPageState extends State<SmsReaderPage> {
       return accNum == userAccountNumber;
     }).toList();
 
+    print('Found ${filtered.length} bank messages after cutoff $cutoff');
+
     for (var msg in filtered) {
       final transactionData = parseTransaction(msg.body);
-      if (transactionData != null) {
+      if (transactionData == null) {
+        print('⚠️ Skipped unparsed message: ${msg.body}');
+        continue;
+      }
+
+      try {
         await DatabaseHelper.instance.insert('transactions', {
           'trans_id': transactionData['trans_id'],
           'description': transactionData['description'],
           'amount': transactionData['amount'],
           'date': transactionData['date'],
           'effect': transactionData['effect'],
-          'account': userAccountNumber, 
+          'account': 1, // hardcoded valid account_id
           'category': null,
         });
+        print('✅ Inserted transaction: ${transactionData['trans_id']}');
+      } catch (e) {
+        print('❌ DB insert failed for ${transactionData['trans_id']} | Error: $e');
       }
     }
 

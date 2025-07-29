@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'utils.dart';
+import 'transaction_dao.dart';
+import 'transaction_model.dart';
+
 
 class HomePageWidget extends StatefulWidget {
   const HomePageWidget({super.key, required this.accountNumber, required this.userName});
@@ -14,6 +17,10 @@ class HomePageWidget extends StatefulWidget {
 class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProviderStateMixin {
   int selectedFilterIndex = 0;
   final filters = ['1D', '1W', '1M', '6M', 'ALL'];
+  double totalIncome = 0.0;
+  double totalExpense = 0.0;
+  List<Transaction> recentTransactions = [];
+
 
   late final AnimationController _controller;
   late final Animation<double> _fadeInAnimation;
@@ -24,6 +31,36 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
     _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
     _fadeInAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
+    _loadDashboardData();
+  }
+
+   Future<void> _loadDashboardData() async {
+    final dao = TransactionDao();
+
+    // determine date range based on selectedIndex
+    final now = DateTime.now();
+    DateTime? startDate;
+    if (selectedFilterIndex == 0) startDate = now.subtract(Duration(days: 1));
+    if (selectedFilterIndex == 1) startDate = now.subtract(Duration(days: 7));
+    if (selectedFilterIndex == 2) startDate = now.subtract(Duration(days: 30));
+    if (selectedFilterIndex == 3) startDate = now.subtract(Duration(days: 180));
+
+    final income = await dao.getTotalByEffect('cr', startDate: startDate);
+    final expense = await dao.getTotalByEffect('dr', startDate: startDate);
+    final txns = await dao.getRecentTransactions(limit: 10);
+
+    setState(() {
+      totalIncome = income;
+      totalExpense = expense;
+      recentTransactions = txns;
+    });
+  }
+
+  void onFilterSelected(int index) {
+    setState(() {
+      selectedFilterIndex = index;
+    });
+    _loadDashboardData(); // reload when filter changes
   }
 
   @override
@@ -32,12 +69,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
     super.dispose();
   }
 
-  void onFilterSelected(int index) {
-    setState(() {
-      selectedFilterIndex = index;
-    });
-    // Add filter logic here
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +116,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                   children: [
                     Expanded(
                       child: SummaryCardModern(
-                        label: 'MWK 120,000',
+                        label: 'MWK ${totalIncome.toStringAsFixed(2)}',
                         color: primary.withOpacity(0.85),
                         icon: Icons.arrow_downward,
                         outlined: false,
@@ -93,7 +125,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                     const SizedBox(width: 16),
                     Expanded(
                       child: SummaryCardModern(
-                        label: 'MWK 85,000',
+                        label: 'MWK ${totalExpense.toStringAsFixed(2)}',
                         color: primary,
                         icon: Icons.arrow_upward,
                         outlined: true,
@@ -121,30 +153,24 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
               const SizedBox(height: 12),
 
              Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                children: [
-                  RecentTransactionModern(
-                    isIncome: true,
-                    description: 'Salary',
-                    amount: 'MWK 120,000',
-                    date: '25 Jul 2025',
-                    onEditCategory: () {
-                      // TODO: Open category picker here
-                    },
-                  ),
-                  RecentTransactionModern(
-                    isIncome: false,
-                    description: 'Groceries',
-                    amount: 'MWK 20,000',
-                    date: '24 Jul 2025',
-                    onEditCategory: () {
-                      // TODO: Open category picker here
-                    },
-                  ),
-                ],
-              ),
-            )
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  children: recentTransactions.isEmpty
+                      ? [const Text('No transactions yet', style: TextStyle(color: Colors.white70))]
+                      : recentTransactions.map((txn) {
+                          return RecentTransactionModern(
+                            isIncome: txn.effect == 'cr',
+                            description: txn.description,
+                            amount: 'MWK ${txn.amount.toStringAsFixed(2)}',
+                            date: txn.date,
+                            category: 'Uncategorized',
+                            onEditCategory: () {
+                              // TODO: Open category picker here
+                            },
+                          );
+                        }).toList(),
+                ),
+              )
 
             ],
           ),
@@ -302,7 +328,7 @@ class FilterChipsModern extends StatelessWidget {
               style: TextStyle(
                 color: isSelected ? Colors.white : onBackground,
                 fontWeight: FontWeight.w700,
-                fontSize: 15,
+                fontSize: 13,
                 fontFamily: 'Poppins',
               ),
             ),

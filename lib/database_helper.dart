@@ -21,6 +21,9 @@ class DatabaseHelper {
       path,
       version: 1,
       onCreate: _onCreate,
+      onConfigure: (db) async {
+      await db.execute('PRAGMA foreign_keys = ON');
+    },
     );
   }
 
@@ -66,7 +69,7 @@ class DatabaseHelper {
       CREATE TABLE transactions (
         transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
         trans_id TEXT NOT NULL,
-        description TEXT NOT NULL,
+        description TEXT,
         amount REAL NOT NULL,
         date TEXT NOT NULL,
         effect TEXT CHECK(effect IN ('cr', 'dr')) NOT NULL,
