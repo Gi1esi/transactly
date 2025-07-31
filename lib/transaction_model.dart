@@ -1,12 +1,13 @@
 class Transaction {
   final int? id;
   final String transId;
-  final String description;
+  String description;
   final double amount;
   final String date; // stored as ISO string: YYYY-MM-DD
   final String effect; // 'cr' or 'dr'
-  final int? category;
+  int? category;
   final int? account;
+  String? categoryName; // <-- added for the joined name
 
   Transaction({
     this.id,
@@ -17,6 +18,7 @@ class Transaction {
     required this.effect,
     this.category,
     this.account,
+    this.categoryName,
   });
 
   Map<String, dynamic> toMap() {
@@ -42,6 +44,7 @@ class Transaction {
       effect: map['effect'],
       category: map['category'],
       account: map['account'],
+      categoryName: map['categoryName'] as String?, 
     );
   }
 }

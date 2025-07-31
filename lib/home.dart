@@ -1,6 +1,6 @@
+import 'package:bank_mvp/transaction_list_page.dart';
 import 'package:flutter/material.dart';
 import 'home_page.dart';
-import 'all_transactions.dart';
 import 'categories_page.dart';
 import 'read_sms.dart';
 import 'DatabaseViewerPage.dart';
@@ -8,8 +8,8 @@ import 'account_dao.dart';
 import 'user_dao.dart';
 import 'bank_dao.dart';
 import 'account_model.dart';
-import 'user_model.dart';
 import 'bank_model.dart';
+import 'all_transactions.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -123,6 +123,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         bank: bankName ?? '',
       ),
       CategoryAnalysisPage(),
+     // SummaryPage(),
       DatabaseViewerPage(),
       SmsReaderPage(),
     ];

@@ -1,132 +1,195 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; 
-
-class Transaction {
-  final bool isIncome;
-  final String description;
-  final double amount;
-  final DateTime date;
-
-  Transaction({
-    required this.isIncome,
-    required this.description,
-    required this.amount,
-    required this.date,
-  });
-
-  String get amountFormatted => 'MWK ${amount.toStringAsFixed(0)}';
-
-  String get dateFormatted => DateFormat('dd MMM yyyy').format(date);
-}
+import 'package:intl/intl.dart';
+import 'transaction_dao.dart';
+import 'transaction_model.dart'; // contains your backend Transaction class
+import 'transaction_card.dart';
+import 'category_dao.dart';
+import 'category_model.dart';
+ // contains RecentTransactionModern
 
 class SummaryPage extends StatefulWidget {
-  const SummaryPage({Key? key}) : super(key: key);
+  const SummaryPage({super.key});
 
   @override
   State<SummaryPage> createState() => _SummaryPageState();
 }
 
 class _SummaryPageState extends State<SummaryPage> {
-  // Quick filters + 'Custom'
   final List<String> filters = ['1D', '1W', '1M', '6M', 'ALL', 'Custom'];
-  int selectedFilterIndex = 5; // Default: Custom (shows all initially)
+  int selectedFilterIndex = 5;
   DateTimeRange? customRange;
 
-  late List<Transaction> allTransactions;
-  late List<Transaction> filteredTransactions;
+
+  List<Transaction> allTransactions = [];
+  List<Transaction> filteredTransactions = [];
 
   @override
   void initState() {
     super.initState();
-
-    // Hardcoded sample transactions
-    allTransactions = [
-      Transaction(isIncome: true, description: 'Salary', amount: 120000, date: DateTime.now().subtract(Duration(days: 1))),
-      Transaction(isIncome: false, description: 'Groceries', amount: 20000, date: DateTime.now().subtract(Duration(days: 2))),
-      Transaction(isIncome: false, description: 'Electricity Bill', amount: 5000, date: DateTime.now().subtract(Duration(days: 10))),
-      Transaction(isIncome: true, description: 'Freelance', amount: 35000, date: DateTime.now().subtract(Duration(days: 20))),
-      Transaction(isIncome: false, description: 'Internet Bill', amount: 7000, date: DateTime.now().subtract(Duration(days: 35))),
-      Transaction(isIncome: false, description: 'Restaurant', amount: 15000, date: DateTime.now().subtract(Duration(days: 50))),
-      Transaction(isIncome: true, description: 'Bonus', amount: 50000, date: DateTime.now().subtract(Duration(days: 180))),
-    ];
-
-    filteredTransactions = List.from(allTransactions);
+    _loadTransactions();
   }
 
-  void applyFilter() {
-    final now = DateTime.now();
-    DateTime cutoff;
-    List<Transaction> tempList;
+final CategoryDao _categoryDao = CategoryDao();
 
-    if (selectedFilterIndex == filters.length - 1) {
-      // Custom range
-      if (customRange == null) {
-        tempList = List.from(allTransactions);
-      } else {
-        tempList = allTransactions.where((tx) {
-          return !tx.date.isBefore(customRange!.start) && !tx.date.isAfter(customRange!.end);
-        }).toList();
-      }
-    } else {
-      switch (filters[selectedFilterIndex]) {
-        case '1D':
-          cutoff = now.subtract(Duration(days: 1));
-          break;
-        case '1W':
-          cutoff = now.subtract(Duration(days: 7));
-          break;
-        case '1M':
-          cutoff = DateTime(now.year, now.month - 1, now.day);
-          break;
-        case '6M':
-          cutoff = DateTime(now.year, now.month - 6, now.day);
-          break;
-        case 'ALL':
-        default:
-          cutoff = DateTime(1970);
-      }
+Future<void> _editTransaction(Transaction txn) async {
+  final categories = await _categoryDao.getAllCategories();
+  String newDesc = txn.description;
+  Category? selectedCat = categories.firstWhere(
+    (c) => c.categoryId == txn.category,
+    orElse: () => categories.isNotEmpty ? categories.first : Category(
+      name: 'Uncategorized',
+      type: txn.effect == 'cr' ? 'income' : 'expense',
+      iconKey: 'fastfood',
+      colorHex: '#FF6B6B'
+    ),
+  );
 
-      tempList = allTransactions.where((tx) => tx.date.isAfter(cutoff)).toList();
-    }
+  await showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Edit Transaction'),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: TextEditingController(text: newDesc),
+                  onChanged: (val) => newDesc = val,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                ),
+                const SizedBox(height: 20),
+                DropdownButton<Category>(
+                  value: selectedCat,
+                  isExpanded: true,
+                  items: categories.map((cat) {
+                    return DropdownMenuItem<Category>(
+                      value: cat,
+                      child: Text(cat.name),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedCat = val);
+                  },
+                )
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+         ElevatedButton(
+          onPressed: () async {
+            txn.description = newDesc;
+            txn.category = selectedCat?.categoryId;
+            await TransactionDao().updateTransaction(txn);
 
+            if (!mounted) return; // <-- check before using context
+            Navigator.pop(context);
+            _loadTransactions();
+          },
+          child: const Text('Save'),
+        ),
+        ],
+      );
+    },
+  );
+}
+
+  Future<void> _loadTransactions() async {
+    final txList = await TransactionDao().getAllTransactions();
     setState(() {
-      filteredTransactions = tempList;
+      allTransactions = txList;
+      filteredTransactions = List.from(txList);
     });
   }
 
-  Future<void> selectCustomDateRange() async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDateRange: customRange ?? DateTimeRange(start: DateTime.now().subtract(Duration(days: 30)), end: DateTime.now()),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Theme.of(context).colorScheme.primary,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
+ void applyFilter() {
+  final now = DateTime.now();
+  DateTime cutoff;
+  List<Transaction> tempList;
 
-    if (picked != null) {
-      setState(() {
-        customRange = picked;
-        applyFilter();
-      });
+  if (selectedFilterIndex == filters.length - 1) {
+    // Custom
+    if (customRange == null) {
+      tempList = List.from(allTransactions);
+    } else {
+      tempList = allTransactions.where((tx) {
+        final txDate = DateTime.parse(tx.date);
+        return !txDate.isBefore(customRange!.start) &&
+               !txDate.isAfter(customRange!.end);
+      }).toList();
     }
+  } else {
+    switch (filters[selectedFilterIndex]) {
+      case '1D':
+        cutoff = now.subtract(const Duration(days: 1));
+        break;
+      case '1W':
+        cutoff = now.subtract(const Duration(days: 7));
+        break;
+      case '1M':
+        cutoff = now.subtract(const Duration(days: 30));
+        break;
+      case '6M':
+        cutoff = now.subtract(const Duration(days: 180));
+        break;
+      case 'ALL':
+      default:
+        cutoff = DateTime(1970);
+    }
+
+    tempList = allTransactions.where((tx) {
+      final txDate = DateTime.parse(tx.date);
+      return !txDate.isBefore(cutoff);
+    }).toList();
   }
+
+  setState(() {
+    filteredTransactions = tempList;
+  });
+}
+
+
+  Future<void> selectCustomDateRange() async {
+  final theme = Theme.of(context);
+  final picked = await showDateRangePicker(
+    context: context,
+    firstDate: DateTime(2020),
+    lastDate: DateTime.now(),
+    initialDateRange: customRange ??
+        DateTimeRange(
+          start: DateTime.now().subtract(const Duration(days: 30)),
+          end: DateTime.now(),
+        ),
+    builder: (context, child) {
+      return Theme(
+        data: theme.copyWith(
+          colorScheme: theme.colorScheme.copyWith(
+            primary: Colors.teal, 
+            onPrimary: Colors.black, 
+            surface: Colors.grey[900], 
+            onSurface: Colors.black,
+          ),
+        ),
+        child: child!,
+      );
+    },
+  );
+
+  if (picked != null) {
+    setState(() {
+      customRange = picked;
+      applyFilter();
+    });
+  }
+}
+
 
   void onFilterSelected(int index) {
     setState(() {
       selectedFilterIndex = index;
-
       if (filters[index] == 'Custom') {
         selectCustomDateRange();
       } else {
@@ -135,19 +198,30 @@ class _SummaryPageState extends State<SummaryPage> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
-    final secondary = theme.colorScheme.secondary;
+  final primary = theme.colorScheme.primary;
+  final secondary = theme.colorScheme.secondary;
+  final onBackground = Colors.white.withOpacity(0.9);
+  final onSecondary = theme.colorScheme.onSecondary;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Summary')),
-      body: Padding(
+      appBar: AppBar(
+        title: Text(
+          'All Transactions',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary, 
+            fontWeight:  FontWeight.w400,
+          ),
+        ),
+        centerTitle: true,
+      ),
+            body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Filters row
             Wrap(
               spacing: 12,
               children: List.generate(filters.length, (index) {
@@ -155,18 +229,22 @@ class _SummaryPageState extends State<SummaryPage> {
                 final label = filters[index] == 'Custom' && customRange != null
                     ? '${DateFormat('MM/dd').format(customRange!.start)} - ${DateFormat('MM/dd').format(customRange!.end)}'
                     : filters[index];
+                  
 
                 return ChoiceChip(
                   label: Text(label),
                   selected: isSelected,
                   onSelected: (_) => onFilterSelected(index),
-                  selectedColor: primary,
+                  selectedColor: Theme.of(context).colorScheme.primary,
+                  checkmarkColor: Colors.white,
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : primary,
+                    color: isSelected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
-                  backgroundColor: Colors.transparent,
-                  side: BorderSide(color: primary),
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: Theme.of(context).colorScheme.primary),
                 );
               }),
             ),
@@ -174,125 +252,38 @@ class _SummaryPageState extends State<SummaryPage> {
 
             Expanded(
               child: filteredTransactions.isEmpty
-                  ? Center(
+                  ? const Center(
                       child: Text(
                         'No transactions found.',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: Colors.black45),
                       ),
                     )
                   : ListView.builder(
                       itemCount: filteredTransactions.length,
                       itemBuilder: (context, index) {
                         final tx = filteredTransactions[index];
-                       return RecentTransactionModern(
-                        isIncome: tx.isIncome,
-                        description: tx.description,
-                        amount: tx.amountFormatted,
-                        date: tx.dateFormatted,
-                        onEditCategory: () {
-                          // TODO: Open category picker for this transaction
-                        },
-                      );
+                        final isIncome = tx.effect == 'cr';
+                        final txDate = DateTime.parse(tx.date);
+                        final formattedDate =
+                            DateFormat('dd MMM yyyy').format(txDate);
+
+                        return RecentTransactionModern(
+                          isIncome: isIncome,
+                          description: tx.description,
+                          amount: 'MWK ${tx.amount.toStringAsFixed(2)}',
+                          date: formattedDate,
+                          category: tx.categoryName ?? 'Uncategorized',
+                          onEditCategory: () => _editTransaction(tx),
+                          primary: primary,
+                          secondary: secondary,
+                          onBackground: onBackground,
+                          onSecondary: onSecondary,
+                        );
                       },
                     ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-
-// Reuse your RecentTransactionModern widget here
-class RecentTransactionModern extends StatelessWidget {
-  final bool isIncome;
-  final String description;
-  final String amount;
-  final String date;
-  final String category;
-  final VoidCallback onEditCategory;
-
-  const RecentTransactionModern({
-    Key? key,
-    required this.isIncome,
-    required this.description,
-    required this.amount,
-    required this.date,
-    this.category = 'Uncategorized',
-    required this.onEditCategory,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final incomeColor = theme.colorScheme.primary;
-    final expenseColor = theme.colorScheme.secondary;
-    final iconColor = isIncome ? incomeColor : expenseColor;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: iconColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isIncome ? Icons.arrow_downward : Icons.arrow_upward,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    fontFamily: 'Poppins',
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$date • $category',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.7),
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            amount,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              fontFamily: 'Poppins',
-              color: iconColor,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white70),
-            onPressed: onEditCategory,
-          )
-        ],
       ),
     );
   }

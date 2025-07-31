@@ -30,4 +30,30 @@ class CategoryDao {
     final db = await dbHelper.database;
     return await db.delete('categories', where: 'category_id = ?', whereArgs: [categoryId]);
   }
+
+  Future<List<Map<String, dynamic>>> getCategorySummary({
+  required bool isExpense,
+  DateTime? startDate,
+}) async {
+  final db = await dbHelper.database;
+  final effect = isExpense ? 'dr' : 'cr';
+  final whereArgs = <dynamic>[effect];
+  String where = 't.effect = ?';
+
+  if (startDate != null) {
+    where += ' AND t.date >= ?';
+    whereArgs.add(startDate.toIso8601String());
+  }
+
+  final result = await db.rawQuery('''
+    SELECT c.name as categoryName, c.color_hex, c.icon_key, SUM(t.amount) as total
+    FROM transactions t
+    LEFT JOIN categories c ON t.category = c.category_id
+    WHERE $where
+    GROUP BY t.category
+    ORDER BY total DESC
+  ''', whereArgs);
+
+  return result;
+}
 }
