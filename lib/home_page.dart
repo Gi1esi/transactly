@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'utils.dart';
 import 'transaction_dao.dart';
 import 'transaction_model.dart';
+import 'category_dao.dart';
+import 'category_model.dart';
+import 'transaction_card.dart';
 
 
 class HomePageWidget extends StatefulWidget {
-  const HomePageWidget({super.key, required this.accountNumber, required this.userName});
+  const HomePageWidget({super.key, required this.accountNumber, required this.userName, required this.bank});
 
   final String accountNumber;
   final String userName;
+  final String bank;
 
   @override
   State<HomePageWidget> createState() => _HomePageWidgetState();
@@ -69,6 +73,75 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
     super.dispose();
   }
 
+  // inside _HomePageWidgetState
+final CategoryDao _categoryDao = CategoryDao();
+
+Future<void> _editTransaction(Transaction txn) async {
+  final categories = await _categoryDao.getAllCategories();
+  String newDesc = txn.description;
+  Category? selectedCat = categories.firstWhere(
+    (c) => c.categoryId == txn.category,
+    orElse: () => categories.isNotEmpty ? categories.first : Category(
+      name: 'Uncategorized',
+      type: txn.effect == 'cr' ? 'income' : 'expense',
+      iconKey: 'fastfood',
+      colorHex: '#FF6B6B'
+    ),
+  );
+
+  await showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Edit Transaction'),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: TextEditingController(text: newDesc),
+                  onChanged: (val) => newDesc = val,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                ),
+                const SizedBox(height: 20),
+                DropdownButton<Category>(
+                  value: selectedCat,
+                  isExpanded: true,
+                  items: categories.map((cat) {
+                    return DropdownMenuItem<Category>(
+                      value: cat,
+                      child: Text(cat.name),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedCat = val);
+                  },
+                )
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+         ElevatedButton(
+          onPressed: () async {
+            txn.description = newDesc;
+            txn.category = selectedCat?.categoryId;
+            await TransactionDao().updateTransaction(txn);
+
+            if (!mounted) return; // <-- check before using context
+            Navigator.pop(context);
+            _loadDashboardData();
+          },
+          child: const Text('Save'),
+        ),
+        ],
+      );
+    },
+  );
+}
+
   
 
   @override
@@ -77,6 +150,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
     final primary = theme.colorScheme.primary;
     final secondary = theme.colorScheme.secondary;
     final onBackground = Colors.white.withOpacity(0.9);
+    final onSecondary = theme.colorScheme.onSecondary;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -93,6 +167,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                   accountNumber: widget.accountNumber,
                   userName: widget.userName,
                   primary: primary,
+                  bank: widget.bank,
                 ),
               ),
 
@@ -144,7 +219,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: onBackground,
+                    color: primary,
                     fontFamily: 'Poppins',
                   ),
                 ),
@@ -158,17 +233,19 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
                   children: recentTransactions.isEmpty
                       ? [const Text('No transactions yet', style: TextStyle(color: Colors.white70))]
                       : recentTransactions.map((txn) {
-                          return RecentTransactionModern(
-                            isIncome: txn.effect == 'cr',
-                            description: txn.description,
-                            amount: formatAmount(txn.amount),
-                            date: txn.date,
-                            category: 'Uncategorized',
-                            onEditCategory: () {
-                              // TODO: Open category picker here
-                            },
-                          );
-                        }).toList(),
+                        return RecentTransactionModern(
+                          isIncome: txn.effect == 'cr',
+                          description: txn.description,
+                          amount: formatAmount(txn.amount),
+                          date: txn.date,
+                          category: txn.categoryName ?? 'Uncategorized',
+                          onEditCategory: () => _editTransaction(txn),
+                          primary: primary,
+                          onBackground: onBackground,
+                          secondary: secondary,
+                          onSecondary: onSecondary,
+                        );
+                      }).toList(),
                 ),
               )
 
@@ -184,13 +261,15 @@ class BankCard extends StatelessWidget {
   final String accountNumber;
   final String userName;
   final Color primary;
+  final dynamic bank;
 
   const BankCard({
-    Key? key,
+    super.key,
     required this.accountNumber,
     required this.userName,
+    required this.bank,
     required this.primary,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +302,7 @@ class BankCard extends StatelessWidget {
             maskAccountNumber(accountNumber),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w500,
               letterSpacing: 2,
               fontFamily: 'Poppins',
@@ -238,11 +317,12 @@ class BankCard extends StatelessWidget {
                     radius: 24,
                     backgroundColor: Colors.white24,
                     child: Text(
-                      userName[0].toUpperCase(),
+                     (userName.isNotEmpty ? userName[0].toUpperCase() : '?'),
+
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 24,
+                        fontSize: 20,
                         fontFamily: 'Poppins',
                       ),
                     ),
@@ -252,7 +332,7 @@ class BankCard extends StatelessWidget {
                     'Hello, $userName!',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       fontFamily: 'Poppins',
                     ),
@@ -262,13 +342,13 @@ class BankCard extends StatelessWidget {
               const Icon(Icons.credit_card, color: Colors.white70, size: 36),
             ],
           ),
-          const Align(
+          Align(
             alignment: Alignment.bottomRight,
             child: Text(
-              'NBM',
-              style: TextStyle(
+              '$bank', // converts to string and uses runtime value
+              style: const TextStyle(
                 color: Colors.white70,
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 4,
                 fontFamily: 'Poppins',
@@ -289,13 +369,13 @@ class FilterChipsModern extends StatelessWidget {
   final Color onBackground;
 
   const FilterChipsModern({
-    Key? key,
+    super.key,
     required this.filters,
     required this.selectedIndex,
     required this.onSelect,
     required this.primary,
     required this.onBackground,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +406,7 @@ class FilterChipsModern extends StatelessWidget {
             child: Text(
               filters[index],
               style: TextStyle(
-                color: isSelected ? Colors.white : onBackground,
+                color: isSelected ? Colors.white : primary,
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
                 fontFamily: 'Poppins',
@@ -346,12 +426,12 @@ class SummaryCardModern extends StatelessWidget {
   final bool outlined;
 
   const SummaryCardModern({
-    Key? key,
+    super.key,
     required this.label,
     required this.color,
     required this.icon,
     this.outlined = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -366,132 +446,24 @@ class SummaryCardModern extends StatelessWidget {
         border: outlined ? Border.all(color: color, width: 2) : null,
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+        
+          
           Text(
             label,
             style: TextStyle(
               color: textColor,
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: 15,
               fontFamily: 'Poppins',
             ),
           ),
-          Icon(icon, color: textColor, size: 26),
+          const SizedBox(width: 8),
+          Icon(icon, color: textColor, size: 22),
         ],
       ),
     );
   }
 }
 
-class RecentTransactionModern extends StatelessWidget {
-  final bool isIncome;
-  final String description;
-  final String amount;
-  final String date;
-  final String category;
-  final VoidCallback onEditCategory;
-
-  const RecentTransactionModern({
-    Key? key,
-    required this.isIncome,
-    required this.description,
-    required this.amount,
-    required this.date,
-    this.category = 'Uncategorized',
-    required this.onEditCategory,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final incomeColor = theme.colorScheme.primary;
-    final expenseColor = theme.colorScheme.secondary;
-    final iconColor = isIncome ? incomeColor : expenseColor;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: iconColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isIncome ? Icons.arrow_downward : Icons.arrow_upward,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    fontFamily: 'Poppins',
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$date • $category',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.7),
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amount,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  fontFamily: 'Poppins',
-                  color: iconColor,
-                ),
-              ),
-              TextButton(
-                onPressed: onEditCategory,
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(40, 20),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'Edit',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          )
-
-        ],
-      ),
-    );
-  }
-}

@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'database_helper.dart';
 
 class SmsReaderPage extends StatefulWidget {
+  const SmsReaderPage({super.key});
+
   @override
   _SmsReaderPageState createState() => _SmsReaderPageState();
 }
@@ -35,7 +37,7 @@ class _SmsReaderPageState extends State<SmsReaderPage> {
     if (smsBody == null) return null;
     final regExp = RegExp(r'Acc[t]?:\s*(\d{6,12})');
     final match = regExp.firstMatch(smsBody);
-    return match != null ? match.group(1) : null;
+    return match?.group(1);
   }
 
   Map<String, dynamic>? parseTransaction(String? smsBody) {
@@ -48,7 +50,7 @@ class _SmsReaderPageState extends State<SmsReaderPage> {
 
       // ✅ Account number (Acc or Acct)
       final accMatch = RegExp(r'Acc[t]?:\s*(\d{6,12})').firstMatch(text);
-      final accNum = accMatch != null ? accMatch.group(1) : null;
+      final accNum = accMatch?.group(1);
 
       // ✅ Fix: Allow amounts with or without decimals
       final amtMatch = RegExp(r'MWK\s*([\d,]+(?:\.\d+)?)(CR|DR)', caseSensitive: false)

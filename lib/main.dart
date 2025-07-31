@@ -18,9 +18,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color darkBg = Color(0xFF0F172A);     // background color
-    const Color primary = Color(0xFF208888);    // primary color
-    const Color secondary = Color(0xFFFF644F);  // secondary color
+    const Color darkBg = Color(0xFF0F172A);     
+    const Color primary = Color(0xFFC2BBF0);    // primary color
+    const Color secondary = Color(0xFFEE6352);  // secondary color
 
     return MaterialApp(
       title: 'Bank SMS Summarizer',
@@ -31,7 +31,6 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.dark(
           primary: primary,
           secondary: secondary,
-          background: darkBg,
           surface: const Color(0xFF1E293B), // slightly lighter for cards
         ),
         appBarTheme: const AppBarTheme(

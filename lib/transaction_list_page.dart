@@ -1,73 +1,114 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'transaction.dart';
-import 'main.dart'; // For parseSms if needed
+import 'package:intl/intl.dart';
+import 'transaction_card.dart';
+import 'transaction_dao.dart';
+import 'transaction_model.dart';
 
 class TransactionListPage extends StatefulWidget {
+  const TransactionListPage({super.key});
+
   @override
   State<TransactionListPage> createState() => _TransactionListPageState();
 }
 
 class _TransactionListPageState extends State<TransactionListPage> {
-  final box = Hive.box<Transaction>('transactions');
+  final TransactionDao _transactionDao = TransactionDao();
 
-  final sampleSms = '''
-Acc: 1007135544 got a Funds Transfer by Mo626of MWK27,000.00DR
-To Acct: 1010653928
-Date/Time: 25/07/25 10:53
-Desc: jean.
-Ref: FT252064Y73S\\BNK
-Thanks NBM
-Mo626 @ 16
-''';
+  List<Transaction> transactions = [];
+  double income = 0;
+  double spending = 0;
 
-  void addSampleTransaction() {
-    final tx = parseSms(sampleSms);
-    if (tx != null) {
-      box.add(tx);
-      setState(() {});
+  @override
+  void initState() {
+    super.initState();
+    _loadTransactions();
+  }
+
+  Future<void> _loadTransactions() async {
+    final txList = await _transactionDao.getAllTransactions();
+
+    double totalIncome = 0;
+    double totalSpending = 0;
+
+    for (var tx in txList) {
+      if (tx.effect == 'dr') {
+        totalSpending += tx.amount;
+      } else {
+        totalIncome += tx.amount;
+      }
     }
+
+    setState(() {
+      transactions = txList;
+      income = totalIncome;
+      spending = totalSpending;
+    });
+  }
+
+  void _editCategory(Transaction tx) {
+    // Open category selection dialog or page
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Category'),
+        content: const Text('Category editing logic goes here.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final transactions = box.values.toList();
-    double income = 0;
-    double spending = 0;
-
-    for (var t in transactions) {
-      if (t.isDebit) {
-        spending += t.amount;
-      } else {
-        income += t.amount;
-      }
-    }
+    final currency = NumberFormat.currency(locale: 'en', symbol: 'MWK ');
 
     return Scaffold(
-      appBar: AppBar(title: Text('Transactions')),
-      body: Column(
-        children: [
-          ElevatedButton(
-            onPressed: addSampleTransaction,
-            child: Text('Add Sample Transaction'),
-          ),
-          Padding(
-            padding: EdgeInsets.all(8),
-            child: Text('Income: MWK $income  Spending: MWK $spending'),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: transactions.length,
-              itemBuilder: (context, index) {
-                final tx = transactions[index];
-                return ListTile(
-                  title: Text('${tx.description} - MWK ${tx.amount.toStringAsFixed(2)}'),
-                  subtitle: Text('${tx.dateTime} - ${tx.isDebit ? "Debit" : "Credit"}'),
-                );
-              },
+      appBar: AppBar(title: const Text('Transactions')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Income: ${currency.format(income)}   Spending: ${currency.format(spending)}',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
             ),
-          ),
-        ],
+            Expanded(
+              child: ListView.builder(
+                itemCount: transactions.length,
+                itemBuilder: (context, index) {
+                  final tx = transactions[index];
+
+                  // Format the stored date (ISO string)
+                  String formattedDate;
+                  try {
+                    final parsed = DateTime.parse(tx.date);
+                    formattedDate = DateFormat('dd MMM yyyy').format(parsed);
+                  } catch (_) {
+                    formattedDate = tx.date; // fallback if parse fails
+                  }
+
+                  return RecentTransactionModern(
+                    isIncome: tx.effect == 'cr',
+                    description: tx.description,
+                    amount: 'MWK ${tx.amount.toStringAsFixed(2)}',
+                    date: formattedDate,
+                    category: tx.categoryName ?? 'Uncategorized',
+                    onEditCategory: () => _editCategory(tx),
+                    primary: Colors.white,
+                    secondary: Colors.black,
+                    onBackground: Colors.black12,
+                    onSecondary: Colors.black26,
+
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
