@@ -134,7 +134,7 @@ Future<void> _editTransaction(Transaction txn) async {
       case '6M':
         cutoff = now.subtract(const Duration(days: 180));
         break;
-      case 'ALL':
+      case 'All':
       default:
         cutoff = DateTime(1970);
     }
@@ -226,7 +226,7 @@ Future<void> _editTransaction(Transaction txn) async {
         title: Text(
           'All Transactions',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.primary, 
+            color: Colors.white, 
             fontWeight:  FontWeight.w400,
           ),
         ),

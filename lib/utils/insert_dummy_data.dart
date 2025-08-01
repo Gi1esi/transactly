@@ -1,4 +1,4 @@
-import '../database_helper.dart';
+import 'database_helper.dart';
 
 Future<void> insertDummyData() async {
   final db = DatabaseHelper.instance;

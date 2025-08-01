@@ -1,4 +1,4 @@
-import '../database_helper.dart';
+import '../utils/database_helper.dart';
 import '../models/bank_model.dart';
 
 class BankDao {

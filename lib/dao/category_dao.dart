@@ -1,5 +1,5 @@
 
-import '../database_helper.dart';
+import '../utils/database_helper.dart';
 import '../models/category_model.dart';
 
 class CategoryDao {

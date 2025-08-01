@@ -3,14 +3,14 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'pages/home.dart';
 import 'pages/splash_page.dart';
 import 'dao/bank_dao.dart';
-import 'database_helper.dart';
+import 'utils/database_helper.dart';
 import 'dao/user_dao.dart';
 import 'utils/read_sms.dart';
 import 'utils/transactions_notifier.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-   // This line forces the DB to initialize
+  
    // Initialize database
   await DatabaseHelper.instance.database;
 
@@ -36,8 +36,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color darkBg = Color(0xFF0F172A);     
-    const Color primary = Color.fromARGB(255, 5, 160, 103);    
+    const Color darkBg = Color(0xFF0D1A1E);     
+    const Color primary = Color(0xFF087CA7);  
     const Color secondary = Color(0xFFFF644F); 
 
     return MaterialApp(

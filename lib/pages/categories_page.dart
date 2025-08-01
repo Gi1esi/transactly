@@ -18,7 +18,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
   
 
   final List<String> filters = ['1D', '1W', '1M', '6M', 'ALL'];
-  int selectedFilterIndex = 2; // Default: 1M
+  int selectedFilterIndex = 0; // Default: 1M
   late TabController _tabController;
 
 
@@ -63,6 +63,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Category Analysis'),
+        centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: primary,
@@ -150,7 +151,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
                     final hex = cat['color_hex'] as String?;
                     final color = (hex != null && hex.length >= 7)
                         ? Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000)
-                        : const Color(0xFF00E676); // fallback color
+                        : const Color.fromARGB(255, 31, 163, 154);  // fallback color
                     return PieChartSectionData(
                       color: color,
                       value: value,
@@ -173,7 +174,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
                 final hex = cat['color_hex'] as String?;
                   final color = (hex != null && hex.length >= 7)
                       ? Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000)
-                      : const Color(0xFF00E676); // fallback color
+                      : const Color.fromARGB(255, 31, 163, 154);  // fallback color
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

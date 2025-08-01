@@ -78,7 +78,6 @@ class _SplashScreenState extends State<SplashScreen>
     final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -110,15 +109,14 @@ class _SplashScreenState extends State<SplashScreen>
             ),
             const SizedBox(height: 20),
 
-            // Feature list with checkmarks
+          
             _buildFeature("Turns bank SMS into a live dashboard", primary),
             _buildFeature("Automatic tracking – no manual entry", primary),
-            _buildFeature("Smart insights on your spending", primary),
             _buildFeature("Clear view of income vs expenses", primary),
 
             const SizedBox(height: 40),
 
-            // Animated loading bar instead of plain CircularProgressIndicator
+           
             SizedBox(
               width: 100,
               height: 6,
