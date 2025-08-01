@@ -1,6 +1,6 @@
 
-import 'database_helper.dart';
-import 'user_model.dart';
+import '../database_helper.dart';
+import '../models/user_model.dart';
 
 class UserDao {
   final dbHelper = DatabaseHelper.instance;

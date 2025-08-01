@@ -1,5 +1,5 @@
-import 'database_helper.dart';
-import 'bank_model.dart';
+import '../database_helper.dart';
+import '../models/bank_model.dart';
 
 class BankDao {
   final dbHelper = DatabaseHelper.instance;

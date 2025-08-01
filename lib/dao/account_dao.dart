@@ -1,7 +1,7 @@
 
-import 'database_helper.dart';
-import 'account_model.dart';
-import 'bank_model.dart';
+import '../database_helper.dart';
+import '../models/account_model.dart';
+import '../models/bank_model.dart';
 
 class AccountDao {
   final dbHelper = DatabaseHelper.instance;

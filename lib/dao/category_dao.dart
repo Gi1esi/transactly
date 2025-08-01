@@ -1,6 +1,6 @@
 
-import 'database_helper.dart';
-import 'category_model.dart';
+import '../database_helper.dart';
+import '../models/category_model.dart';
 
 class CategoryDao {
   final dbHelper = DatabaseHelper.instance;

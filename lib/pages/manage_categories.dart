@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'category_dao.dart';
-import 'category_model.dart';
+import '../dao/category_dao.dart';
+import '../models/category_model.dart';
 
 class ManageCategoriesPage extends StatefulWidget {
   final bool isExpense;

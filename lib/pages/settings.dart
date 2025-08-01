@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'account_dao.dart';
-import 'account_model.dart';
-import 'bank_dao.dart';
-import 'transaction_dao.dart';
+import '../dao/account_dao.dart';
+import '../models/account_model.dart';
+import '../dao/bank_dao.dart';
+import '../dao/transaction_dao.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});

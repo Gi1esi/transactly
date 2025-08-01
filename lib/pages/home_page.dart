@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'utils.dart';
-import 'transaction_dao.dart';
-import 'transaction_model.dart';
-import 'category_dao.dart';
-import 'category_model.dart';
+import '../utils/utils.dart';
+import '../dao/transaction_dao.dart';
+import '../models/transaction_model.dart';
+import '../dao/category_dao.dart';
+import '../models/category_model.dart';
 import 'transaction_card.dart';
 
 
