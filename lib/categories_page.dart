@@ -75,7 +75,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
       body: Column(
         children: [
           const SizedBox(height: 8),
-          // Filter chips
+         
           FilterChipsModern(
           filters: filters,
           selectedIndex: selectedFilterIndex,
@@ -111,12 +111,12 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
         (sum, item) => sum + (item['total'] as double),
       );
 
-      // same UI as before, but map over `categories`
+     
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // overview card
+         
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -137,7 +137,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
             ),
             const SizedBox(height: 24),
 
-            // pie chart
+           
             SizedBox(
               height: 200,
               child: PieChart(
@@ -165,7 +165,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
 
             const SizedBox(height: 24),
 
-            // list of categories
+     
             Column(
               children: categories.map((cat) {
                 final amount = cat['total'] as double;
@@ -195,7 +195,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
                       ),
                       const SizedBox(width: 8),
                       Text('${percent.toStringAsFixed(1)}%',
-                          style: const TextStyle(color: Colors.black45, fontSize: 13)),
+                          style: const TextStyle(color: Colors.white, fontSize: 13)),
                     ],
                   ),
                 );
@@ -204,7 +204,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
 
             const SizedBox(height: 24),
 
-            // manage categories button (leave untouched)
+           
             ElevatedButton(
               onPressed: () {
                 Navigator.push(

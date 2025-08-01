@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'transaction_dao.dart';
-import 'transaction_model.dart'; // contains your backend Transaction class
+import 'transaction_model.dart'; 
 import 'transaction_card.dart';
 import 'category_dao.dart';
 import 'category_model.dart';
- // contains RecentTransactionModern
-
+import 'utils.dart';
 class SummaryPage extends StatefulWidget {
   const SummaryPage({super.key});
 
@@ -15,8 +14,8 @@ class SummaryPage extends StatefulWidget {
 }
 
 class _SummaryPageState extends State<SummaryPage> {
-  final List<String> filters = ['1D', '1W', '1M', '6M', 'ALL', 'Custom'];
-  int selectedFilterIndex = 5;
+  final List<String> filters = ['1D', '1W', '1M', '6M', 'All', 'Custom'];
+  int selectedFilterIndex = 4;
   DateTimeRange? customRange;
 
 
@@ -85,7 +84,7 @@ Future<void> _editTransaction(Transaction txn) async {
             txn.category = selectedCat?.categoryId;
             await TransactionDao().updateTransaction(txn);
 
-            if (!mounted) return; // <-- check before using context
+            if (!mounted) return; 
             Navigator.pop(context);
             _loadTransactions();
           },
@@ -270,7 +269,7 @@ Future<void> _editTransaction(Transaction txn) async {
                   ? const Center(
                       child: Text(
                         'No transactions found.',
-                        style: TextStyle(color: Colors.black45),
+                        style: TextStyle(color: Colors.white),
                       ),
                     )
                   : ListView.builder(
@@ -285,7 +284,7 @@ Future<void> _editTransaction(Transaction txn) async {
                         return RecentTransactionModern(
                           isIncome: isIncome,
                           description: tx.description,
-                          amount: 'MWK ${tx.amount.toStringAsFixed(2)}',
+                          amount: formatAmount(tx.amount),
                           date: formattedDate,
                           category: tx.categoryName ?? 'Uncategorized',
                           onEditCategory: () => _editTransaction(tx),

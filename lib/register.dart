@@ -154,7 +154,7 @@ Widget build(BuildContext context) {
                       ),
                       const SizedBox(height: 16),
 
-                      // Bank Dropdown
+                      
                       isLoading
                           ? const CircularProgressIndicator()
                           : DropdownButtonFormField<Bank>(
@@ -162,7 +162,7 @@ Widget build(BuildContext context) {
                               items: banks.map((bank) {
                                 return DropdownMenuItem<Bank>(
                                   value: bank,
-                                  child: Text(bank.name),
+                                   child: Text(bank.longName ?? bank.name),
                                 );
                               }).toList(),
                               onChanged: (val) =>

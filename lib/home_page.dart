@@ -7,6 +7,7 @@ import 'category_model.dart';
 import 'transaction_card.dart';
 
 
+
 class HomePageWidget extends StatefulWidget {
   const HomePageWidget({super.key, required this.accountNumber, required this.userName, required this.bank});
 
@@ -41,7 +42,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
    Future<void> _loadDashboardData() async {
     final dao = TransactionDao();
 
-    // determine date range based on selectedIndex
+   
     final now = DateTime.now();
     DateTime? startDate;
     if (selectedFilterIndex == 0) startDate = now.subtract(Duration(days: 1));
@@ -64,7 +65,7 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
     setState(() {
       selectedFilterIndex = index;
     });
-    _loadDashboardData(); // reload when filter changes
+    _loadDashboardData();
   }
 
   @override
@@ -73,7 +74,6 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
     super.dispose();
   }
 
-  // inside _HomePageWidgetState
 final CategoryDao _categoryDao = CategoryDao();
 
 Future<void> _editTransaction(Transaction txn) async {
@@ -130,7 +130,7 @@ Future<void> _editTransaction(Transaction txn) async {
             txn.category = selectedCat?.categoryId;
             await TransactionDao().updateTransaction(txn);
 
-            if (!mounted) return; // <-- check before using context
+            if (!mounted) return; 
             Navigator.pop(context);
             _loadDashboardData();
           },
@@ -271,6 +271,11 @@ class BankCard extends StatelessWidget {
     required this.primary,
   });
 
+  String maskAccountNumber(String acc) {
+    if (acc.length <= 4) return acc;
+    return '**** **** ${acc.substring(acc.length - 4)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -294,66 +299,77 @@ class BankCard extends StatelessWidget {
           )
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
         children: [
-          Text(
-            maskAccountNumber(accountNumber),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 2,
-              fontFamily: 'Poppins',
+          // Subtle horizontal lines
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _LinePatternPainter(primary.withOpacity(0.15)),
             ),
           ),
-          Row(
+
+          // Card content
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Text(
+                maskAccountNumber(accountNumber),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 2,
+                  fontFamily: 'Poppins',
+                ),
+              ),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.white24,
-                    child: Text(
-                     (userName.isNotEmpty ? userName[0].toUpperCase() : '?'),
-
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        fontFamily: 'Poppins',
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.white24,
+                        child: Text(
+                          (userName.isNotEmpty ? userName[0].toUpperCase() : '?'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Hello, $userName..',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Hello, $userName!',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                  const Icon(Icons.credit_card, color: Colors.white70, size: 36),
                 ],
               ),
-              const Icon(Icons.credit_card, color: Colors.white70, size: 36),
-            ],
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Text(
-              '$bank', // converts to string and uses runtime value
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 4,
-                fontFamily: 'Poppins',
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Text(
+                  '$bank',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -361,6 +377,25 @@ class BankCard extends StatelessWidget {
   }
 }
 
+class _LinePatternPainter extends CustomPainter {
+  final Color color;
+  _LinePatternPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+
+    const gap = 12.0;
+    for (double y = 0; y < size.height; y += gap) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 class FilterChipsModern extends StatelessWidget {
   final List<String> filters;
   final int selectedIndex;

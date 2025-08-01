@@ -135,7 +135,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             children: [
               Image.asset(
                 'assets/images/Transactly.png',
-                height: 50,
+                height: 100,
                 fit: BoxFit.contain,
               ),
               CircleAvatar(

@@ -5,7 +5,7 @@ import 'bank_dao.dart';
 import 'transaction_dao.dart';
 import 'transaction_model.dart';
 import 'database_helper.dart';
-import 'transactions_notifier.dart'; // create this ChangeNotifier singleton
+import 'transactions_notifier.dart'; 
 
 class SmsWatcher {
   final Telephony telephony = Telephony.instance;
@@ -18,7 +18,7 @@ class SmsWatcher {
       return;
     }
 
-    // Get account number and bank address from DB
+    
     final accounts = await AccountDao().getAllAccounts();
     if (accounts.isEmpty) {
       print('No accounts found. Skipping SMS watcher.');
@@ -87,7 +87,7 @@ class SmsWatcher {
           filtered.map((m) => m.date ?? 0).reduce((a, b) => a > b ? a : b);
       await DatabaseHelper.instance.saveLastReadTimestamp(newestDate);
 
-      // Notify listeners to refresh UI
+      
       TransactionsNotifier.instance.notify();
     }
   }
