@@ -126,7 +126,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
               child: Column(
                 children: [
                   Text(isExpense ? 'Total Expenses' : 'Total Income',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black45,)),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white,)),
                   const SizedBox(height: 8),
                   Text(
                     'MWK ${total.toStringAsFixed(0)}',
@@ -187,7 +187,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
                       const SizedBox(width: 16),
                       Expanded(
                         child: Text(cat['categoryName'] ?? 'Uncategorized',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black45)),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
                       ),
                       Text(
                         'MWK ${amount.toStringAsFixed(0)}',

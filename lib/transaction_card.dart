@@ -68,7 +68,7 @@ class RecentTransactionModern extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                     fontFamily: 'Poppins',
-                    color: Colors.black45,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -77,7 +77,7 @@ class RecentTransactionModern extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black45,
+                    color: Colors.white,
                     fontFamily: 'Poppins',
                   ),
                 ),
@@ -106,7 +106,7 @@ class RecentTransactionModern extends StatelessWidget {
                 child: const Text(
                   'Edit',
                   style: TextStyle(
-                    color: Colors.black45,
+                    color: Colors.white,
                     fontSize: 12,
                     fontFamily: 'Poppins',
                     fontWeight: FontWeight.w500,

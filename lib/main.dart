@@ -3,12 +3,26 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'transaction.dart';
 import 'transaction_list_page.dart';
 import 'home.dart';
+import 'splash_page.dart';
+import 'bank_dao.dart';
+import 'database_helper.dart';
+import 'user_dao.dart';
+import 'read_sms.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
-  Hive.registerAdapter(TransactionAdapter());
-  await Hive.openBox<Transaction>('transactions');
+   // This line forces the DB to initialize
+   // Initialize database
+  await DatabaseHelper.instance.database;
+
+  // Seed banks
+  await BankDao().seedBanks();
+
+  final users = await UserDao().getAllUsers();
+  if (users.isNotEmpty) {
+    await SmsWatcher().startWatching();
+  }
+
 
   runApp(const MyApp());
 }
@@ -19,8 +33,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color darkBg = Color(0xFF0F172A);     
-    const Color primary = Color(0xFFC2BBF0);    // primary color
-    const Color secondary = Color(0xFFEE6352);  // secondary color
+    const Color primary = Color.fromARGB(255, 5, 160, 103);    // primary color
+    const Color secondary = Color(0xFFFF644F);  // secondary color
 
     return MaterialApp(
       title: 'Bank SMS Summarizer',
@@ -49,7 +63,7 @@ class MyApp extends StatelessWidget {
           displayColor: Colors.white,
         ),
       ),
-      home: const HomePage(),
+      home: SplashScreen(),
     );
   }
 }
