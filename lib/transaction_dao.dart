@@ -71,17 +71,21 @@ class TransactionDao {
 
 
   // NEW: Get recent transactions with a limit
- Future<List<Transaction>> getRecentTransactions({int limit = 10}) async {
-  final db = await dbHelper.database;
+  Future<List<Transaction>> getRecentTransactions({int limit = 10}) async {
+    final db = await dbHelper.database;
 
-  final result = await db.rawQuery('''
-    SELECT t.*, c.name AS categoryName
-    FROM transactions t
-    LEFT JOIN categories c ON t.category = c.category_id
-    ORDER BY t.date DESC
-    LIMIT ?
-  ''', [limit]);
+    final result = await db.rawQuery('''
+      SELECT t.*, c.name AS categoryName
+      FROM transactions t
+      LEFT JOIN categories c ON t.category = c.category_id
+      ORDER BY t.date DESC
+      LIMIT ?
+    ''', [limit]);
 
-  return result.map((m) => Transaction.fromMap(m)).toList();
-}
+    return result.map((m) => Transaction.fromMap(m)).toList();
+  }
+  Future<int> clearAllTransactions() async {
+    final db = await dbHelper.database;
+    return await db.delete('transactions');
+  }
 }

@@ -57,13 +57,12 @@ class _RegisterPageState extends State<RegisterPage> {
   );
   await AccountDao().insertAccount(account);
 
-  // Show success message
+
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('Registration successful!')),
   );
   // Start SMS watcher in background
   await SmsWatcher().startWatching();
-  // Navigate to HomePage and replace current page
   Future.delayed(const Duration(milliseconds: 500), () {
     Navigator.pushReplacement(
       context,
@@ -80,7 +79,7 @@ Widget build(BuildContext context) {
   final secondary = theme.colorScheme.secondary;
 
   return Scaffold(
-    resizeToAvoidBottomInset: true, // allows layout to adjust for keyboard
+    resizeToAvoidBottomInset: true, 
     body: SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) {

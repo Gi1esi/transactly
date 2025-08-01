@@ -8,6 +8,7 @@ import 'bank_dao.dart';
 import 'database_helper.dart';
 import 'user_dao.dart';
 import 'read_sms.dart';
+import 'transactions_notifier.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,12 @@ void main() async {
   }
 
 
-  runApp(const MyApp());
+  runApp(
+  AnimatedBuilder(
+    animation: TransactionsNotifier.instance,
+    builder: (context, _) => const MyApp(),
+  ),
+);
 }
 
 class MyApp extends StatelessWidget {

@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'transaction_card.dart';
 import 'transaction_dao.dart';
 import 'transaction_model.dart';
-
+import 'transactions_notifier.dart';
 class TransactionListPage extends StatefulWidget {
   const TransactionListPage({super.key});
 
@@ -61,55 +61,48 @@ class _TransactionListPageState extends State<TransactionListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currency = NumberFormat.currency(locale: 'en', symbol: 'MWK ');
-
     return Scaffold(
       appBar: AppBar(title: const Text('Transactions')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'Income: ${currency.format(income)}   Spending: ${currency.format(spending)}',
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: transactions.length,
-                itemBuilder: (context, index) {
-                  final tx = transactions[index];
+      body: AnimatedBuilder(
+        animation: TransactionsNotifier.instance,
+        builder: (context, _) {
+          return FutureBuilder<List<Transaction>>(
+            future: _transactionDao.getAllTransactions(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-                  // Format the stored date (ISO string)
-                  String formattedDate;
-                  try {
-                    final parsed = DateTime.parse(tx.date);
-                    formattedDate = DateFormat('dd MMM yyyy').format(parsed);
-                  } catch (_) {
-                    formattedDate = tx.date; // fallback if parse fails
-                  }
+              final txList = snapshot.data!;
+              final totalIncome = txList.where((tx) => tx.effect == 'cr').fold(0.0, (a, b) => a + b.amount);
+              final totalSpending = txList.where((tx) => tx.effect == 'dr').fold(0.0, (a, b) => a + b.amount);
 
-                  return RecentTransactionModern(
-                    isIncome: tx.effect == 'cr',
-                    description: tx.description,
-                    amount: 'MWK ${tx.amount.toStringAsFixed(2)}',
-                    date: formattedDate,
-                    category: tx.categoryName ?? 'Uncategorized',
-                    onEditCategory: () => _editCategory(tx),
-                    primary: Colors.white,
-                    secondary: Colors.black,
-                    onBackground: Colors.black12,
-                    onSecondary: Colors.black26,
-
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text('Income: MWK ${totalIncome.toStringAsFixed(2)}  Spending: MWK ${totalSpending.toStringAsFixed(2)}'),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: txList.length,
+                      itemBuilder: (context, index) {
+                        final tx = txList[index];
+                        return ListTile(
+                          title: Text(tx.description),
+                          subtitle: Text(tx.date),
+                          trailing: Text('${tx.amount.toStringAsFixed(2)} ${tx.effect.toUpperCase()}'),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }
+
 }

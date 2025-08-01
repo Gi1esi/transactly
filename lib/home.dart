@@ -70,9 +70,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
       final bank = banks.firstWhere(
         (element) => element.bankId == account.bankId,
-        orElse: () => Bank(bankId: 0, name: 'Unknown Bank', smsAddressBox: '626626',),
+        orElse: () => Bank(bankId: 0, name: 'Unknown Bank', smsAddressBox: '626626'),
       );
-
 
       print('DEBUG: Loaded account number ${account.accountNumber} for userId ${account.userId}');
 
@@ -109,7 +108,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final primary = theme.colorScheme.primary;
     final secondary = theme.colorScheme.secondary;
 
-    // Loader until DB query finishes
     if (isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -124,8 +122,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
       CategoryAnalysisPage(),
       SummaryPage(),
-      DatabaseViewerPage(),
-      // SmsReaderPage(),
     ];
 
     return SafeArea(
@@ -189,16 +185,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.account_balance_wallet_outlined),
-              label: 'Categories',
+              label: 'Spending Insights',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.analytics_outlined),
-              label: 'Summary',
+              label: 'All Transactions',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              label: 'Settings',
-            ),
+            
           ],
         ),
       ),
