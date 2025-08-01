@@ -168,9 +168,9 @@ Future<void> _editTransaction(Transaction txn) async {
         data: theme.copyWith(
           colorScheme: theme.colorScheme.copyWith(
             primary: Colors.teal, 
-            onPrimary: Colors.black, 
+            onPrimary: Colors.white, 
             surface: Colors.grey[900], 
-            onSurface: Colors.black,
+            onSurface: Colors.white,
           ),
         ),
         child: child!,
@@ -198,6 +198,21 @@ Future<void> _editTransaction(Transaction txn) async {
     });
   }
 
+  void _editCategory(Transaction tx) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Category'),
+        content: const Text('Category editing logic goes here.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          )
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -243,7 +258,7 @@ Future<void> _editTransaction(Transaction txn) async {
                         : Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
-                  backgroundColor: Colors.white,
+                  backgroundColor: Color(0xFF0F172A),
                   side: BorderSide(color: Theme.of(context).colorScheme.primary),
                 );
               }),

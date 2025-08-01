@@ -123,9 +123,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         bank: bankName ?? '',
       ),
       CategoryAnalysisPage(),
-     // SummaryPage(),
+      SummaryPage(),
       DatabaseViewerPage(),
-      SmsReaderPage(),
+      // SmsReaderPage(),
     ];
 
     return SafeArea(
@@ -137,14 +137,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Transactly',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: primary,
-                  fontFamily: 'Poppins',
-                ),
+              Image.asset(
+                'assets/images/Transactly.png',
+                height: 50,
+                fit: BoxFit.contain,
               ),
               CircleAvatar(
                 backgroundColor: primary.withOpacity(0.15),
