@@ -109,7 +109,7 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
       _controller.clear();
       selectedIcon = availableIcons.first;
 
-      // auto-pick first unused color
+      
       final usedColors = categories.map((c) => c.colorHex).toSet();
       selectedColor = availableColors.firstWhere(
         (c) => !usedColors.contains(c),
@@ -156,30 +156,30 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
                     Text('Select Color:'),
                     const SizedBox(height: 10),
                     Wrap(
-  spacing: 16,
-  runSpacing: 16,
-  children: availableColors.map((colorHex) {
-    final color = _colorFromHex(colorHex);
-    final isUsed = categories.any((c) =>
-      c.colorHex == colorHex &&
-      (existingCategory == null || c.categoryId != existingCategory.categoryId)
-    );
-    return GestureDetector(
-      onTap: isUsed ? null : () => setState(() => selectedColor = colorHex),
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: selectedColor == colorHex ? Border.all(width: 3, color: Colors.black) : null,
-          boxShadow: isUsed ? [const BoxShadow(color: Colors.black26, blurRadius: 3)] : [],
-        ),
-        child: isUsed ? const Icon(Icons.block, color: Colors.white) : null,
-      ),
-    );
-  }).toList(),
-),
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: availableColors.map((colorHex) {
+                        final color = _colorFromHex(colorHex);
+                        final isUsed = categories.any((c) =>
+                          c.colorHex == colorHex &&
+                          (existingCategory == null || c.categoryId != existingCategory.categoryId)
+                        );
+                        return GestureDetector(
+                          onTap: isUsed ? null : () => setState(() => selectedColor = colorHex),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: selectedColor == colorHex ? Border.all(width: 3, color: Colors.black) : null,
+                              boxShadow: isUsed ? [const BoxShadow(color: Colors.black26, blurRadius: 3)] : [],
+                            ),
+                            child: isUsed ? const Icon(Icons.block, color: Colors.white) : null,
+                          ),
+                        );
+                      }).toList(),
+                    ),
 
                   ],
                 ),

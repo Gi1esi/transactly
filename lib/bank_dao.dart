@@ -37,7 +37,9 @@ class BankDao {
   if (banks.isEmpty) {
     final nbm = Bank(
       name: 'NBM',
+      longName: 'National Bank of Malawi',
       smsAddressBox: '626626',
+
     );
     await bankDao.insertBank(nbm);
     print('DEBUG: Seeded NBM into banks table');
@@ -45,5 +47,14 @@ class BankDao {
     print('DEBUG: Banks table already seeded');
   }
 }
+Future<void> updateSmsAddress(int bankId, String newAddress) async {
+    final db = await dbHelper.database;
+    await db.update(
+      'banks',
+      {'sms_address_box': newAddress},
+      where: 'bank_id = ?',
+      whereArgs: [bankId],
+    );
+  }
 
 }

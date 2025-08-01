@@ -10,29 +10,33 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
     _checkUser();
   }
 
   Future<void> _checkUser() async {
-    await Future.delayed(const Duration(seconds: 2)); // short splash delay
+    await Future.delayed(const Duration(seconds: 5));
     final userDao = UserDao();
     final users = await userDao.getAllUsers();
 
     if (!mounted) return;
 
     if (users.isEmpty) {
-      // No user → go to register/login
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const RegisterPage()),
       );
     } else {
-      // User exists → go to home
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
@@ -41,41 +45,94 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _buildFeature(String text, Color primary) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle, color: primary, size: 20),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Colors.white70,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // you can remove this image to make it "no picture"
             Image.asset(
               'assets/images/accounting.png',
-              width: 180,
-              height: 180,
+              width: 160,
+              height: 160,
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 25),
             Text(
               'Transactly',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: 30,
                 fontWeight: FontWeight.bold,
                 color: primary,
                 letterSpacing: 1.2,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             const Text(
-              'Track and manage your finances effortlessly',
+              'Your money. Your insights.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
                 color: Colors.white70,
               ),
             ),
-            const SizedBox(height: 50),
-            const CircularProgressIndicator(), // shows loading until navigation
+            const SizedBox(height: 20),
+
+            // Feature list with checkmarks
+            _buildFeature("Turns bank SMS into a live dashboard", primary),
+            _buildFeature("Automatic tracking – no manual entry", primary),
+            _buildFeature("Smart insights on your spending", primary),
+            _buildFeature("Clear view of income vs expenses", primary),
+
+            const SizedBox(height: 40),
+
+            // Animated loading bar instead of plain CircularProgressIndicator
+            SizedBox(
+              width: 100,
+              height: 6,
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return LinearProgressIndicator(
+                    value: _controller.value,
+                    backgroundColor: Colors.white24,
+                    color: primary,
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

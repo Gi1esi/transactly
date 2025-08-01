@@ -36,24 +36,26 @@ class DatabaseHelper {
       )
     ''');
 
-    await db.execute('''
-      CREATE TABLE banks (
-        bank_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        sms_address_box TEXT NOT NULL
-      )
-    ''');
+     await db.execute('''
+    CREATE TABLE banks (
+      bank_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      long_name TEXT,
+      sms_address_box TEXT NOT NULL
+    )
+  ''');
 
-    await db.execute('''
-      CREATE TABLE accounts (
-        account_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        account_number TEXT NOT NULL,
-        bank INTEGER,
-        user INTEGER,
-        FOREIGN KEY (bank) REFERENCES banks(bank_id) ON DELETE SET NULL ON UPDATE CASCADE,
-        FOREIGN KEY (user) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE
-      )
-    ''');
+  await db.execute('''
+    CREATE TABLE accounts (
+      account_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      account_number TEXT NOT NULL,
+      bank INTEGER,
+      user INTEGER,
+      is_active INTEGER DEFAULT 0,
+      FOREIGN KEY (bank) REFERENCES banks(bank_id) ON DELETE SET NULL ON UPDATE CASCADE,
+      FOREIGN KEY (user) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE
+    )
+  ''');
 
     await db.execute('''
       CREATE TABLE categories (
