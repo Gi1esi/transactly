@@ -4,7 +4,7 @@ import '../dao/account_dao.dart';
 import '../dao/bank_dao.dart';
 import '../dao/transaction_dao.dart';
 import '../models/transaction_model.dart';
-import '../database_helper.dart';
+import 'database_helper.dart';
 import 'transactions_notifier.dart'; 
 
 class SmsWatcher {

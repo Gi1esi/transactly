@@ -134,7 +134,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             children: [
               Image.asset(
                 'assets/images/Transactly.png',
-                height: 100,
+                height: 120,
                 fit: BoxFit.contain,
               ),
               CircleAvatar(
@@ -183,7 +183,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet_outlined),
+             icon: Icon(Icons.pie_chart_outline),
               label: 'Spending Insights',
             ),
             BottomNavigationBarItem(

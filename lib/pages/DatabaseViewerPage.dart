@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../database_helper.dart';
+import '../utils/database_helper.dart';
 
 class DatabaseViewerPage extends StatefulWidget {
   const DatabaseViewerPage({super.key});
