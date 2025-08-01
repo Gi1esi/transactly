@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'manage_categories.dart';
-import 'transaction_dao.dart';
-import 'category_dao.dart';
+import '../dao/transaction_dao.dart';
+import '../dao/category_dao.dart';
 import 'filter_chips.dart';
 
 class CategoryAnalysisPage extends StatefulWidget {

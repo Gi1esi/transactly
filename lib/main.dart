@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'transaction_list_page.dart';
-import 'home.dart';
-import 'splash_page.dart';
-import 'bank_dao.dart';
+import 'pages/home.dart';
+import 'pages/splash_page.dart';
+import 'dao/bank_dao.dart';
 import 'database_helper.dart';
-import 'user_dao.dart';
-import 'read_sms.dart';
-import 'transactions_notifier.dart';
+import 'dao/user_dao.dart';
+import 'utils/read_sms.dart';
+import 'utils/transactions_notifier.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
