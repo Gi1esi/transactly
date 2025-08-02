@@ -17,7 +17,6 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
 
   List<Category> categories = [];
 
-  // Extended icons & colors
   final List<IconData> availableIcons = [
     Icons.restaurant,
     Icons.receipt,
@@ -52,36 +51,10 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
   ];
 
   final List<String> availableColors = [
-    '#FF6B6B',
-    '#6BCB77',
-    '#4D96FF',
-    '#FFD93D',
-    '#FF6BF1',
-    '#6BFFEA',
-    '#FF9F40',
-    '#FF6384',
-    '#36A2EB',
-    '#FFCE56',
-    '#9966FF',
-    '#C9CBCF',
-    '#FF7043',
-    '#8BC34A',
-    '#00BCD4',
-    '#E91E63',
-    '#9C27B0',
-    '#03A9F4',
-    '#4CAF50',
-    '#FF5722',
-    '#607D8B',
-    '#795548',
-    '#009688',
-    '#673AB7',
-    '#FFEB3B',
-    '#CDDC39',
-    '#3F51B5',
-    '#F44336',
-    '#2196F3',
-    
+    '#FF6B6B', '#6BCB77', '#4D96FF', '#FFD93D', '#FF6BF1', '#6BFFEA', '#FF9F40',
+    '#FF6384', '#36A2EB', '#FFCE56', '#9966FF', '#C9CBCF', '#FF7043', '#8BC34A',
+    '#00BCD4', '#E91E63', '#9C27B0', '#03A9F4', '#4CAF50', '#FF5722', '#607D8B',
+    '#795548', '#009688', '#673AB7', '#FFEB3B', '#CDDC39', '#3F51B5', '#F44336', '#2196F3',
   ];
 
   IconData? selectedIcon;
@@ -109,7 +82,6 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
       _controller.clear();
       selectedIcon = availableIcons.first;
 
-      
       final usedColors = categories.map((c) => c.colorHex).toSet();
       selectedColor = availableColors.firstWhere(
         (c) => !usedColors.contains(c),
@@ -121,7 +93,8 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(existingCategory == null ? 'Add Category' : 'Edit Category'),
+          backgroundColor: Colors.white,
+          title: Text(existingCategory == null ? 'Add Category' : 'Edit Category', style: const TextStyle(color: Colors.black)),
           content: StatefulBuilder(
             builder: (context, setState) {
               return SingleChildScrollView(
@@ -133,7 +106,7 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
                       decoration: const InputDecoration(labelText: 'Category Name'),
                     ),
                     const SizedBox(height: 20),
-                    Text('Select Icon:'),
+                    const Text('Select Icon:', style: TextStyle(color: Colors.black87)),
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 16,
@@ -145,15 +118,15 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: selectedIcon == icon ? Colors.blueAccent : Colors.grey[300],
+                              color: selectedIcon == icon ? Colors.blueAccent : Colors.grey[200],
                             ),
-                            child: Icon(icon, color: selectedIcon == icon ? Colors.white : Colors.black),
+                            child: Icon(icon, color: selectedIcon == icon ? Colors.white : Colors.black87),
                           ),
                         );
                       }).toList(),
                     ),
                     const SizedBox(height: 30),
-                    Text('Select Color:'),
+                    const Text('Select Color:', style: TextStyle(color: Colors.black87)),
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 16,
@@ -172,7 +145,7 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
                             decoration: BoxDecoration(
                               color: color,
                               shape: BoxShape.circle,
-                              border: selectedColor == colorHex ? Border.all(width: 3, color: Colors.black) : null,
+                              border: selectedColor == colorHex ? Border.all(width: 3, color: Colors.black45) : null,
                               boxShadow: isUsed ? [const BoxShadow(color: Colors.black26, blurRadius: 3)] : [],
                             ),
                             child: isUsed ? const Icon(Icons.block, color: Colors.white) : null,
@@ -180,14 +153,13 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
                         );
                       }).toList(),
                     ),
-
                   ],
                 ),
               );
             },
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Colors.black54))),
             ElevatedButton(
               onPressed: () async {
                 final name = _controller.text.trim();
@@ -217,7 +189,13 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
                 Navigator.pop(context);
                 _loadCategories();
               },
-              child: const Text('Save'),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              child: const Text('Save', style: TextStyle(color: Colors.white),),
+              
             ),
           ],
         );
@@ -295,21 +273,34 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
     final title = widget.isExpense ? 'Manage Expense Categories' : 'Manage Income Categories';
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: Text(title, style: const TextStyle(color: Colors.black87)),
+        iconTheme: const IconThemeData(color: Colors.black87),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             ElevatedButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text('Add Category'),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'Add Category',
+                style: TextStyle(color: Colors.white),
+              ),
               onPressed: () => _addOrEditCategory(),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             Expanded(
               child: ListView.separated(
                 itemCount: categories.length,
-                separatorBuilder: (_, __) => const Divider(),
+                separatorBuilder: (_, __) => const Divider(color: Colors.black12),
                 itemBuilder: (context, index) {
                   final category = categories[index];
                   return ListTile(
@@ -319,7 +310,7 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
                     ),
                     title: Text(
                       category.name,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.black87),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,

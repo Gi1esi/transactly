@@ -62,11 +62,19 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Category Analysis'),
+        title: Text(
+          'Category Analysis',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+          ),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: primary,
+          labelColor: primary,
+          unselectedLabelColor: primary,
           tabs: const [
             Tab(text: 'Expenses'),
             Tab(text: 'Income'),
@@ -127,7 +135,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
               child: Column(
                 children: [
                   Text(isExpense ? 'Total Expenses' : 'Total Income',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white,)),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black45,)),
                   const SizedBox(height: 8),
                   Text(
                     'MWK ${total.toStringAsFixed(0)}',
@@ -188,7 +196,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
                       const SizedBox(width: 16),
                       Expanded(
                         child: Text(cat['categoryName'] ?? 'Uncategorized',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black45)),
                       ),
                       Text(
                         'MWK ${amount.toStringAsFixed(0)}',
@@ -196,7 +204,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
                       ),
                       const SizedBox(width: 8),
                       Text('${percent.toStringAsFixed(1)}%',
-                          style: const TextStyle(color: Colors.white, fontSize: 13)),
+                          style: const TextStyle(color: Colors.black45, fontSize: 13)),
                     ],
                   ),
                 );
