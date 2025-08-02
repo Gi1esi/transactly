@@ -231,7 +231,7 @@ Future<void> _editTransaction(Transaction txn) async {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Column(
                   children: recentTransactions.isEmpty
-                      ? [const Text('No transactions yet', style: TextStyle(color: Colors.white70))]
+                      ? [const Text('No transactions yet', style: TextStyle(color: Colors.black45))]
                       : recentTransactions.map((txn) {
                         return RecentTransactionModern(
                           isIncome: txn.effect == 'cr',

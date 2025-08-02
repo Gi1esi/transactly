@@ -37,6 +37,7 @@ dependencies:
   intl: ^0.18.0
   telephony: ^0.2.0
   sqflite: ^2.3.0
+  
   # Later: telephony (for real SMS reading), but skip for MVP
 
   # The following adds the Cupertino Icons font to your application.
@@ -48,6 +49,7 @@ dev_dependencies:
     sdk: flutter
   hive_generator: ^2.0.0
   build_runner: ^2.3.3
+  flutter_launcher_icons: ^0.13.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -58,10 +60,15 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
-
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/Transactly.png"
+  adaptive_icon_background: "#FFFFFF" # for Android adaptive icons
+  adaptive_icon_foreground: "assets/images/Transactly.png"
 # The following section is specific to Flutter packages.
 
-  
+ 
 flutter:
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

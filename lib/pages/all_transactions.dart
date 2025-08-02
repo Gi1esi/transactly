@@ -151,8 +151,7 @@ Future<void> _editTransaction(Transaction txn) async {
 }
 
 
-  Future<void> selectCustomDateRange() async {
-  final theme = Theme.of(context);
+ Future<void> selectCustomDateRange() async {
   final picked = await showDateRangePicker(
     context: context,
     firstDate: DateTime(2020),
@@ -164,13 +163,14 @@ Future<void> _editTransaction(Transaction txn) async {
         ),
     builder: (context, child) {
       return Theme(
-        data: theme.copyWith(
-          colorScheme: theme.colorScheme.copyWith(
-            primary: Colors.teal, 
-            onPrimary: Colors.white, 
-            surface: Colors.grey[900], 
-            onSurface: Colors.white,
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.light(
+            primary: Colors.teal,        // selection color
+            onPrimary: Colors.white,     // text on selection
+            surface: Colors.white,       // calendar background
+            onSurface: Colors.black87,   // text color
           ),
+          dialogBackgroundColor: Colors.white,
         ),
         child: child!,
       );
@@ -184,6 +184,7 @@ Future<void> _editTransaction(Transaction txn) async {
     });
   }
 }
+
 
 
   void onFilterSelected(int index) {
@@ -226,8 +227,8 @@ Future<void> _editTransaction(Transaction txn) async {
         title: Text(
           'All Transactions',
           style: TextStyle(
-            color: Colors.white, 
-            fontWeight:  FontWeight.w400,
+            color:  theme.colorScheme.primary, 
+            fontWeight:  FontWeight.w600,
           ),
         ),
         centerTitle: true,
@@ -257,7 +258,7 @@ Future<void> _editTransaction(Transaction txn) async {
                         : Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
-                  backgroundColor: Color(0xFF0F172A),
+                  backgroundColor: Colors.white,
                   side: BorderSide(color: Theme.of(context).colorScheme.primary),
                 );
               }),

@@ -63,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen>
               text,
               style: const TextStyle(
                 fontSize: 15,
-                color: Colors.white70,
+                color: Colors.black45,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -104,7 +104,7 @@ class _SplashScreenState extends State<SplashScreen>
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.white70,
+                color: Colors.black45,
               ),
             ),
             const SizedBox(height: 20),
@@ -125,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen>
                 builder: (context, child) {
                   return LinearProgressIndicator(
                     value: _controller.value,
-                    backgroundColor: Colors.white24,
+                    backgroundColor: Colors.black12,
                     color: primary,
                   );
                 },
