@@ -9,6 +9,7 @@ import '../dao/bank_dao.dart';
 import '../models/account_model.dart';
 import '../models/bank_model.dart';
 import 'all_transactions.dart';
+import 'settings_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -119,15 +120,16 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         userName: userName ?? '',
         bank: bankName ?? '',
       ),
-      CategoryAnalysisPage(),
+      // CategoryAnalysisPage(),
+      DatabaseViewerPage(),
       SummaryPage(),
+      SettingsPage(),
     ];
 
     return SafeArea(
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          elevation: 0,
           backgroundColor: Colors.transparent,
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -189,6 +191,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             BottomNavigationBarItem(
               icon: Icon(Icons.analytics_outlined),
               label: 'All Transactions',
+            ),
+             BottomNavigationBarItem(
+              icon: Icon(Icons.analytics_outlined),
+              label: 'Settings',
             ),
             
           ],

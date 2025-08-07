@@ -1,5 +1,5 @@
-name: bank_mvp
-description: "A new Flutter project."
+name: transactly
+description: "A dashboard for personal finance."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -37,6 +37,8 @@ dependencies:
   intl: ^0.18.0
   telephony: ^0.2.0
   sqflite: ^2.3.0
+  url_launcher: ^6.1.10
+  local_auth: ^2.1.5
   
   # Later: telephony (for real SMS reading), but skip for MVP
 
@@ -63,9 +65,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/Transactly.png"
+  image_path: "assets/images/logo.png"
   adaptive_icon_background: "#FFFFFF" # for Android adaptive icons
-  adaptive_icon_foreground: "assets/images/Transactly.png"
+  adaptive_icon_foreground: "assets/images/logo.png"
 # The following section is specific to Flutter packages.
 
  
@@ -77,6 +79,7 @@ flutter:
   assets:
     - assets/images/Transactly.png
     - assets/images/accounting.png
+    - assets/images/logo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

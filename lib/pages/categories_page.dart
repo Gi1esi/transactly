@@ -62,6 +62,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
 
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
         title: Text(
           'Category Analysis',
               style: TextStyle(

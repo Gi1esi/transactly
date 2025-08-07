@@ -7,11 +7,12 @@ class RecentTransactionModern extends StatelessWidget {
   final String date;
   final String category;
   final VoidCallback onEditCategory;
+  final Future<void> Function(BuildContext context, double amount, String description) onSplit;
   final Color primary;
   final Color onBackground;
   final Color secondary;
   final Color onSecondary;
-
+  final bool isChild;
 
   const RecentTransactionModern({
     super.key,
@@ -21,12 +22,65 @@ class RecentTransactionModern extends StatelessWidget {
     required this.date,
     this.category = 'Uncategorized',
     required this.onEditCategory,
+    required this.onSplit, 
     required this.primary,
     required this.onBackground,
     required this.secondary,
     required this.onSecondary,
-
+     required this.isChild,
   });
+
+  Future<void> _showSplitDialog(BuildContext context) async {
+  final _amountController = TextEditingController();
+  final _descController = TextEditingController();
+
+  await showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Split Transaction'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _amountController,
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Split Amount',
+              hintText: 'Enter amount to split',
+            ),
+          ),
+          TextField(
+            controller: _descController,
+            decoration: const InputDecoration(
+              labelText: 'Split Description',
+              hintText: 'Description for this split part',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final amountText = _amountController.text.trim();
+            final descText = _descController.text.trim();
+            if (amountText.isEmpty || descText.isEmpty) return;
+            final parsedAmount = double.tryParse(amountText);
+            if (parsedAmount == null) return;
+            await onSplit(ctx, parsedAmount, descText);
+
+            Navigator.pop(ctx); 
+          },
+          child: const Text('Split'),
+        ),
+      ],
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -96,26 +150,49 @@ class RecentTransactionModern extends StatelessWidget {
                   color: iconColor,
                 ),
               ),
-              TextButton(
-                onPressed: onEditCategory,
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(40, 20),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'Edit',
-                  style: TextStyle(
-                    color: Colors.black45,
-                    fontSize: 12,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: onEditCategory,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(40, 20),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'Edit',
+                      style: TextStyle(
+                        color: Colors.black45,
+                        fontSize: 12,
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  if (!isChild)
+                    TextButton(
+                      onPressed: () => _showSplitDialog(context),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(40, 20),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        'Split',
+                        style: TextStyle(
+                          color: Colors.black45,
+                          fontSize: 12,
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ],
           )
-
         ],
       ),
     );
