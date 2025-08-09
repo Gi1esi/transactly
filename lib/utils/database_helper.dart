@@ -52,6 +52,7 @@ class DatabaseHelper {
       bank INTEGER,
       user INTEGER,
       is_active INTEGER DEFAULT 0,
+      last_read_timestamp INTEGER,
       FOREIGN KEY (bank) REFERENCES banks(bank_id) ON DELETE SET NULL ON UPDATE CASCADE,
       FOREIGN KEY (user) REFERENCES users(user_id) ON DELETE SET NULL ON UPDATE CASCADE
     )
@@ -67,7 +68,7 @@ class DatabaseHelper {
       )
     ''');
 
-    await db.execute('''
+   await db.execute('''
       CREATE TABLE transactions (
         transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
         trans_id TEXT NOT NULL,
@@ -77,10 +78,21 @@ class DatabaseHelper {
         effect TEXT CHECK(effect IN ('cr', 'dr')) NOT NULL,
         category INTEGER,
         account INTEGER,
+        parent_transaction_id INTEGER,
+        is_split_child INTEGER DEFAULT 0 CHECK(is_split_child IN (0, 1)),
+        
+        -- Constraint ensures parent_transaction_id is only set for split children
+        CHECK (
+          (is_split_child = 1 AND parent_transaction_id IS NOT NULL) OR
+          (is_split_child = 0 AND parent_transaction_id IS NULL)
+        ),
+
         FOREIGN KEY (category) REFERENCES categories(category_id) ON DELETE SET NULL ON UPDATE CASCADE,
-        FOREIGN KEY (account) REFERENCES accounts(account_id) ON DELETE SET NULL ON UPDATE CASCADE
+        FOREIGN KEY (account) REFERENCES accounts(account_id) ON DELETE SET NULL ON UPDATE CASCADE,
+        FOREIGN KEY (parent_transaction_id) REFERENCES transactions(transaction_id) ON DELETE CASCADE ON UPDATE CASCADE
       )
     ''');
+
 
     await db.execute('CREATE INDEX idx_transaction_date ON transactions(date)');
 
@@ -109,26 +121,26 @@ class DatabaseHelper {
   }
 
   // Save last read timestamp
-  Future<void> saveLastReadTimestamp(int timestamp) async {
-    final db = await database;
-    await db.insert(
-      'settings',
-      {'key': 'last_read_timestamp', 'value': timestamp.toString()},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
+  // Future<void> saveLastReadTimestamp(int timestamp) async {
+  //   final db = await database;
+  //   await db.insert(
+  //     'settings',
+  //     {'key': 'last_read_timestamp', 'value': timestamp.toString()},
+  //     conflictAlgorithm: ConflictAlgorithm.replace,
+  //   );
+  // }
 
   // Get last read timestamp
-  Future<int?> getLastReadTimestamp() async {
-    final db = await database;
-    final result = await db.query(
-      'settings',
-      where: 'key = ?',
-      whereArgs: ['last_read_timestamp'],
-    );
-    if (result.isNotEmpty) {
-      return int.tryParse(result.first['value'] as String);
-    }
-    return null;
-  }
+  // Future<int?> getLastReadTimestamp() async {
+  //   final db = await database;
+  //   final result = await db.query(
+  //     'settings',
+  //     where: 'key = ?',
+  //     whereArgs: ['last_read_timestamp'],
+  //   );
+  //   if (result.isNotEmpty) {
+  //     return int.tryParse(result.first['value'] as String);
+  //   }
+  //   return null;
+  // }
 }

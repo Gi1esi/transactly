@@ -7,27 +7,27 @@ import 'utils/database_helper.dart';
 import 'dao/user_dao.dart';
 import 'utils/read_sms.dart';
 import 'utils/transactions_notifier.dart';
+// import 'package:flutter_windowmanager/flutter_windowmanager.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-   // Initialize database
+  // await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+
   await DatabaseHelper.instance.database;
 
-  // Seed banks
   await BankDao().seedBanks();
 
   final users = await UserDao().getAllUsers();
   if (users.isNotEmpty) {
     await SmsWatcher().startWatching();
   }
-
-
   runApp(
   AnimatedBuilder(
     animation: TransactionsNotifier.instance,
     builder: (context, _) => const MyApp(),
   ),
+  
 );
 }
 

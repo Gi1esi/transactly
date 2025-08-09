@@ -293,6 +293,27 @@ Future<void> _editTransaction(Transaction txn) async {
                           secondary: secondary,
                           onBackground: onBackground,
                           onSecondary: onSecondary,
+                          onSplit: (context, splitAmount, splitDescription) async {
+                          try {
+                            final dao = TransactionDao();
+                            await dao.splitTransaction(
+                              parent: tx,
+                              splitAmount: splitAmount,
+                              splitDescription: splitDescription,
+                              
+                            );
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Transaction split successfully')),
+                            );
+                            
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error splitting transaction: $e')),
+                            );
+                          }
+                        },
+                        isChild: tx.parentTransactionId != null,
                         );
                       },
                     ),

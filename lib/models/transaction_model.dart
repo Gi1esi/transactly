@@ -3,11 +3,13 @@ class Transaction {
   final String transId;
   String description;
   final double amount;
-  final String date; // stored as ISO string: YYYY-MM-DD
+  final String date; // ISO: YYYY-MM-DD
   final String effect; // 'cr' or 'dr'
   int? category;
   final int? account;
-  String? categoryName; // <-- added for the joined name
+  String? categoryName; // joined name
+  final int? parentTransactionId; // NEW
+  final bool isSplitChild; // NEW
 
   Transaction({
     this.id,
@@ -19,6 +21,8 @@ class Transaction {
     this.category,
     this.account,
     this.categoryName,
+    this.parentTransactionId,
+    this.isSplitChild = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -31,6 +35,8 @@ class Transaction {
       'effect': effect,
       'category': category,
       'account': account,
+      'parent_transaction_id': parentTransactionId,
+      'is_split_child': isSplitChild ? 1 : 0,
     };
   }
 
@@ -44,7 +50,9 @@ class Transaction {
       effect: map['effect'],
       category: map['category'],
       account: map['account'],
-      categoryName: map['categoryName'] as String?, 
+      categoryName: map['categoryName'] as String?,
+      parentTransactionId: map['parent_transaction_id'],
+      isSplitChild: (map['is_split_child'] ?? 0) == 1,
     );
   }
 }

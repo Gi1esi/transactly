@@ -233,18 +233,39 @@ Future<void> _editTransaction(Transaction txn) async {
                   children: recentTransactions.isEmpty
                       ? [const Text('No transactions yet', style: TextStyle(color: Colors.black45))]
                       : recentTransactions.map((txn) {
-                        return RecentTransactionModern(
-                          isIncome: txn.effect == 'cr',
-                          description: txn.description,
-                          amount: formatAmount(txn.amount),
-                          date: txn.date,
-                          category: txn.categoryName ?? 'Uncategorized',
-                          onEditCategory: () => _editTransaction(txn),
-                          primary: primary,
-                          onBackground: onBackground,
-                          secondary: secondary,
-                          onSecondary: onSecondary,
-                        );
+                       return RecentTransactionModern(
+                        isIncome: txn.effect == 'cr',
+                        description: txn.description,
+                        amount: formatAmount(txn.amount),
+                        date: txn.date,
+                        category: txn.categoryName ?? 'Uncategorized',
+                        onEditCategory: () => _editTransaction(txn),
+                        onSplit: (context, splitAmount, splitDescription) async {
+                          try {
+                            final dao = TransactionDao();
+                            await dao.splitTransaction(
+                              parent: txn,
+                              splitAmount: splitAmount,
+                              splitDescription: splitDescription,
+                              
+                            );
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Transaction split successfully')),
+                            );
+                            
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error splitting transaction: $e')),
+                            );
+                          }
+                        },
+                        isChild: txn.parentTransactionId != null,
+                        primary: primary,
+                        onBackground: onBackground,
+                        secondary: secondary,
+                        onSecondary: onSecondary,
+                      );
                       }).toList(),
                 ),
               )
@@ -304,7 +325,7 @@ class BankCard extends StatelessWidget {
           // Subtle horizontal lines
           Positioned.fill(
             child: CustomPaint(
-              painter: _LinePatternPainter(primary.withOpacity(0.15)),
+              painter: _CardWavePatternPainter(primary.withOpacity(0.15)),
             ),
           ),
 
@@ -377,25 +398,20 @@ class BankCard extends StatelessWidget {
   }
 }
 
-class _LinePatternPainter extends CustomPainter {
+class _CardWavePatternPainter extends CustomPainter {
   final Color color;
-  _LinePatternPainter(this.color);
+  _CardWavePatternPainter(this.color);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1;
-
-    const gap = 12.0;
-    for (double y = 0; y < size.height; y += gap) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
+    // Intentionally left blank – no background pattern for now
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+
 class FilterChipsModern extends StatelessWidget {
   final List<String> filters;
   final int selectedIndex;
@@ -483,8 +499,6 @@ class SummaryCardModern extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-        
-          
           Text(
             label,
             style: TextStyle(

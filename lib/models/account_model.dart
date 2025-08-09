@@ -5,7 +5,8 @@ class Account {
   int? bankId;
   int? userId;
   bool isActive;
-  Bank? bank; 
+  int? lastReadTimestamp; // <- Add this
+  Bank? bank;
 
   Account({
     this.accountId,
@@ -13,8 +14,8 @@ class Account {
     this.bankId,
     this.userId,
     this.isActive = false,
+    this.lastReadTimestamp,
   });
-
 
   Map<String, dynamic> toMap() {
     return {
@@ -23,9 +24,9 @@ class Account {
       'bank': bankId,
       'user': userId,
       'is_active': isActive ? 1 : 0,
+      'last_read_timestamp': lastReadTimestamp,
     };
   }
-
 
   factory Account.fromMap(Map<String, dynamic> map) {
     return Account(
@@ -34,6 +35,7 @@ class Account {
       bankId: map['bank'],
       userId: map['user'],
       isActive: (map['is_active'] ?? 0) == 1,
+      lastReadTimestamp: map['last_read_timestamp'],
     );
   }
 }
