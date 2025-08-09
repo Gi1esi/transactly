@@ -21,7 +21,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
   int selectedFilterIndex = 0; // Default: 1M
   late TabController _tabController;
 
-
+  bool _showPieChart = false;
   Future<List<Map<String, dynamic>>> _loadCategoryData(bool isExpense) async {
     final dao = CategoryDao();
     DateTime? startDate;
@@ -121,12 +121,33 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
         (sum, item) => sum + (item['total'] as double),
       );
 
-     
+      // Prepare bar chart data
+      final barGroups = categories.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final cat = entry.value;
+        final amount = cat['total'] as double;
+        final hex = cat['color_hex'] as String?;
+        final color = (hex != null && hex.length >= 7)
+            ? Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000)
+            : const Color.fromARGB(255, 31, 163, 154);
+
+        return BarChartGroupData(
+          x: idx,
+          barRods: [
+            BarChartRodData(
+              toY: amount,
+              color: color,
+              width: 18,
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ],
+        );
+      }).toList();
+
       return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-         
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -136,7 +157,7 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
               child: Column(
                 children: [
                   Text(isExpense ? 'Total Expenses' : 'Total Income',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black45,)),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black45)),
                   const SizedBox(height: 8),
                   Text(
                     'MWK ${total.toStringAsFixed(0)}',
@@ -145,76 +166,151 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
                 ],
               ),
             ),
+
             const SizedBox(height: 24),
 
-           
-            SizedBox(
-              height: 200,
-              child: PieChart(
-                PieChartData(
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 40,
-                  sections: categories.map((cat) {
-                    final value = cat['total'] as double;
-                    final percent = total == 0 ? 0 : (value / total) * 100;
-                    final hex = cat['color_hex'] as String?;
-                    final color = (hex != null && hex.length >= 7)
-                        ? Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000)
-                        : const Color.fromARGB(255, 31, 163, 154);  // fallback color
-                    return PieChartSectionData(
-                      color: color,
-                      value: value,
-                      title: percent < 5 ? '' : '${percent.toStringAsFixed(0)}%',
-                      radius: 70,
-                      titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    );
-                  }).toList(),
-                ),
+            if (categories.isEmpty) ...[
+              Text(
+                'No ${isExpense ? 'expenses' : 'income'} recorded in this period.',
+                style: TextStyle(color: primary, fontSize: 16),
               ),
-            ),
+              const SizedBox(height: 24),
+            ] else ...[
+              // Toggle Buttons to switch charts
+              Row(
+                children: [
+                  ChoiceChip(
+                    label: const Text('Bar Chart'),
+                    selected: !_showPieChart,
+                    onSelected: (val) {
+                      if (val) setState(() => _showPieChart = false);
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  ChoiceChip(
+                    label: const Text('Pie Chart'),
+                    selected: _showPieChart,
+                    onSelected: (val) {
+                      if (val) setState(() => _showPieChart = true);
+                    },
+                  ),
+                ],
+              ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-     
-            Column(
-              children: categories.map((cat) {
-                final amount = cat['total'] as double;
-                final percent = total == 0 ? 0 : (amount / total) * 100;
-                final hex = cat['color_hex'] as String?;
+              _showPieChart
+                  ? SizedBox(
+                      height: 200,
+                      child: PieChart(
+                        PieChartData(
+                          sectionsSpace: 2,
+                          centerSpaceRadius: 40,
+                          sections: categories.map((cat) {
+                            final value = cat['total'] as double;
+                            final percent = total == 0 ? 0 : (value / total) * 100;
+                            final hex = cat['color_hex'] as String?;
+                            final color = (hex != null && hex.length >= 7)
+                                ? Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000)
+                                : const Color.fromARGB(255, 31, 163, 154);
+                            return PieChartSectionData(
+                              color: color,
+                              value: value,
+                              title: percent < 5 ? '' : '${percent.toStringAsFixed(0)}%',
+                              radius: 70,
+                              titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    )
+                  : SizedBox(
+                      height: 250,
+                      child: BarChart(
+                        BarChartData(
+                          maxY: (categories.map((c) => c['total'] as double).reduce((a, b) => a > b ? a : b)) * 1.2,
+                          barGroups: barGroups,
+                          borderData: FlBorderData(show: false),
+                          titlesData: FlTitlesData(
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  final idx = value.toInt();
+                                  if (idx < 0 || idx >= categories.length) return const SizedBox.shrink();
+                                  String name = categories[idx]['categoryName'] ?? 'Other';
+                                  if (name.length > 6) name = '${name.substring(0, 6)}...';
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Text(name, style: TextStyle(color: primary, fontSize: 10)),
+                                  );
+                                },
+                                reservedSize: 30,
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 40,
+                                getTitlesWidget: (value, meta) {
+                                  if (value % (total / 5) == 0) {
+                                    return Text('MWK ${value.toInt()}', style: const TextStyle(fontSize: 10));
+                                  }
+                                  return const SizedBox.shrink();
+                                },
+                              ),
+                            ),
+                            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          ),
+                          gridData: FlGridData(show: true),
+                          barTouchData: BarTouchData(enabled: true),
+                        ),
+                      ),
+                    ),
+
+              const SizedBox(height: 24),
+
+          
+              Column(
+                children: categories.map((cat) {
+                  final amount = cat['total'] as double;
+                  final percent = total == 0 ? 0 : (amount / total) * 100;
+                  final hex = cat['color_hex'] as String?;
                   final color = (hex != null && hex.length >= 7)
                       ? Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000)
-                      : const Color.fromARGB(255, 31, 163, 154);  // fallback color
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.circle, color: color, size: 20),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(cat['categoryName'] ?? 'Uncategorized',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black45)),
-                      ),
-                      Text(
-                        'MWK ${amount.toStringAsFixed(0)}',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: color),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('${percent.toStringAsFixed(1)}%',
-                          style: const TextStyle(color: Colors.black45, fontSize: 13)),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
+                      : const Color.fromARGB(255, 31, 163, 154);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.circle, color: color, size: 20),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(cat['categoryName'] ?? 'Uncategorized',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black45)),
+                        ),
+                        Text(
+                          'MWK ${amount.toStringAsFixed(0)}',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                        ),
+                        const SizedBox(width: 8),
+                        Text('${percent.toStringAsFixed(1)}%', style: const TextStyle(color: Colors.black45, fontSize: 13)),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
 
             const SizedBox(height: 24),
 
-           
+            // Manage categories button always visible
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -245,3 +341,6 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
 }
 
 }
+
+
+

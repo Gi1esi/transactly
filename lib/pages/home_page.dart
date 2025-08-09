@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/account_provider.dart';
 import '../utils/utils.dart';
 import '../dao/transaction_dao.dart';
 import '../models/transaction_model.dart';
@@ -6,14 +8,8 @@ import '../dao/category_dao.dart';
 import '../models/category_model.dart';
 import 'transaction_card.dart';
 
-
-
 class HomePageWidget extends StatefulWidget {
-  const HomePageWidget({super.key, required this.accountNumber, required this.userName, required this.bank});
-
-  final String accountNumber;
-  final String userName;
-  final String bank;
+  const HomePageWidget({super.key});
 
   @override
   State<HomePageWidget> createState() => _HomePageWidgetState();
@@ -26,39 +22,54 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
   double totalExpense = 0.0;
   List<Transaction> recentTransactions = [];
 
-
   late final AnimationController _controller;
   late final Animation<double> _fadeInAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
-    _fadeInAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _fadeInAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
     _controller.forward();
     _loadDashboardData();
+    // Load account data if not already loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<AccountProvider>(context, listen: false);
+      if (provider.activeAccount == null) {
+        provider.loadActiveAccount();
+      }
+    });
   }
 
-   Future<void> _loadDashboardData() async {
+  Future<void> _loadDashboardData() async {
     final dao = TransactionDao();
-
-   
     final now = DateTime.now();
     DateTime? startDate;
-    if (selectedFilterIndex == 0) startDate = now.subtract(Duration(days: 1));
-    if (selectedFilterIndex == 1) startDate = now.subtract(Duration(days: 7));
-    if (selectedFilterIndex == 2) startDate = now.subtract(Duration(days: 30));
-    if (selectedFilterIndex == 3) startDate = now.subtract(Duration(days: 180));
+
+    switch (selectedFilterIndex) {
+      case 0: startDate = now.subtract(const Duration(days: 1)); break;
+      case 1: startDate = now.subtract(const Duration(days: 7)); break;
+      case 2: startDate = now.subtract(const Duration(days: 30)); break;
+      case 3: startDate = now.subtract(const Duration(days: 180)); break;
+    }
 
     final income = await dao.getTotalByEffect('cr', startDate: startDate);
     final expense = await dao.getTotalByEffect('dr', startDate: startDate);
     final txns = await dao.getRecentTransactions(limit: 10);
 
-    setState(() {
-      totalIncome = income;
-      totalExpense = expense;
-      recentTransactions = txns;
-    });
+    if (mounted) {
+      setState(() {
+        totalIncome = income;
+        totalExpense = expense;
+        recentTransactions = txns;
+      });
+    }
   }
 
   void onFilterSelected(int index) {
@@ -74,75 +85,74 @@ class _HomePageWidgetState extends State<HomePageWidget> with SingleTickerProvid
     super.dispose();
   }
 
-final CategoryDao _categoryDao = CategoryDao();
+  Future<void> _editTransaction(Transaction txn) async {
+    final categories = await CategoryDao().getAllCategories();
+    String newDesc = txn.description;
+    Category? selectedCat = categories.firstWhere(
+      (c) => c.categoryId == txn.category,
+      orElse: () => categories.isNotEmpty ? categories.first : Category(
+        name: 'Uncategorized',
+        type: txn.effect == 'cr' ? 'income' : 'expense',
+        iconKey: 'fastfood',
+        colorHex: '#FF6B6B'
+      ),
+    );
 
-Future<void> _editTransaction(Transaction txn) async {
-  final categories = await _categoryDao.getAllCategories();
-  String newDesc = txn.description;
-  Category? selectedCat = categories.firstWhere(
-    (c) => c.categoryId == txn.category,
-    orElse: () => categories.isNotEmpty ? categories.first : Category(
-      name: 'Uncategorized',
-      type: txn.effect == 'cr' ? 'income' : 'expense',
-      iconKey: 'fastfood',
-      colorHex: '#FF6B6B'
-    ),
-  );
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Transaction'),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: TextEditingController(text: newDesc),
+                    onChanged: (val) => newDesc = val,
+                    decoration: const InputDecoration(labelText: 'Description'),
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButton<Category>(
+                    value: selectedCat,
+                    isExpanded: true,
+                    items: categories.map((cat) {
+                      return DropdownMenuItem<Category>(
+                        value: cat,
+                        child: Text(cat.name),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => selectedCat = val);
+                    },
+                  )
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                txn.description = newDesc;
+                txn.category = selectedCat?.categoryId;
+                await TransactionDao().updateTransaction(txn);
 
-  await showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Edit Transaction'),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: TextEditingController(text: newDesc),
-                  onChanged: (val) => newDesc = val,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                ),
-                const SizedBox(height: 20),
-                DropdownButton<Category>(
-                  value: selectedCat,
-                  isExpanded: true,
-                  items: categories.map((cat) {
-                    return DropdownMenuItem<Category>(
-                      value: cat,
-                      child: Text(cat.name),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => selectedCat = val);
-                  },
-                )
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-         ElevatedButton(
-          onPressed: () async {
-            txn.description = newDesc;
-            txn.category = selectedCat?.categoryId;
-            await TransactionDao().updateTransaction(txn);
-
-            if (!mounted) return; 
-            Navigator.pop(context);
-            _loadDashboardData();
-          },
-          child: const Text('Save'),
-        ),
-        ],
-      );
-    },
-  );
-}
-
-  
+                if (!mounted) return; 
+                Navigator.pop(context);
+                _loadDashboardData();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,131 +162,135 @@ Future<void> _editTransaction(Transaction txn) async {
     final onBackground = Colors.white.withOpacity(0.9);
     final onSecondary = theme.colorScheme.onSecondary;
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: FadeTransition(
-          opacity: _fadeInAnimation,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: BankCard(
-                  accountNumber: widget.accountNumber,
-                  userName: widget.userName,
-                  primary: primary,
-                  bank: widget.bank,
-                ),
-              ),
+    return Consumer<AccountProvider>(
+      builder: (context, accountProvider, _) {
+        if (accountProvider.activeAccount == null || accountProvider.bank == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-              const SizedBox(height: 24),
-
-              Center(
-                child: FilterChipsModern(
-                  filters: filters,
-                  selectedIndex: selectedFilterIndex,
-                  onSelect: onFilterSelected,
-                  primary: primary,
-                  onBackground: onBackground,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-  children: [
-    Expanded(
-      child: SummaryCardModern(
-        label: formatAmount(totalIncome),
-        color: primary.withOpacity(0.85),
-        icon: Icons.arrow_downward,
-        outlined: false,
-      ),
-    ),
-    const SizedBox(width: 16),
-    Expanded(
-      child: SummaryCardModern(
-        label: formatAmount(totalExpense),
-        color: primary,
-        icon: Icons.arrow_upward,
-        outlined: true,
-      ),
-    ),
-  ],
-),
-              ),
-
-              const SizedBox(height: 32),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'Recent Transactions',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: primary,
-                    fontFamily: 'Poppins',
+        return SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: FadeTransition(
+              opacity: _fadeInAnimation,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: BankCard(
+                      accountNumber: accountProvider.activeAccount!.accountNumber,
+                      userName: accountProvider.user?.firstName ?? 'User', 
+                      primary: primary,
+                      bank: accountProvider.bank!.name,
+                    ),
                   ),
-                ),
+
+                  const SizedBox(height: 24),
+
+                  Center(
+                    child: FilterChipsModern(
+                      filters: filters,
+                      selectedIndex: selectedFilterIndex,
+                      onSelect: onFilterSelected,
+                      primary: primary,
+                      onBackground: onBackground,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SummaryCardModern(
+                            label: formatAmount(totalIncome),
+                            color: primary.withOpacity(0.85),
+                            icon: Icons.arrow_downward,
+                            outlined: false,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: SummaryCardModern(
+                            label: formatAmount(totalExpense),
+                            color: primary,
+                            icon: Icons.arrow_upward,
+                            outlined: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      'Recent Transactions',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: primary,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Column(
+                      children: recentTransactions.isEmpty
+                          ? [const Text('No transactions yet', style: TextStyle(color: Colors.black45))]
+                          : recentTransactions.map((txn) {
+                              return RecentTransactionModern(
+                                isIncome: txn.effect == 'cr',
+                                description: txn.description,
+                                amount: formatAmount(txn.amount),
+                                date: txn.date,
+                                category: txn.categoryName ?? 'Uncategorized',
+                                onEditCategory: () => _editTransaction(txn),
+                                onSplit: (context, splitAmount, splitDescription) async {
+                                  try {
+                                    await TransactionDao().splitTransaction(
+                                      parent: txn,
+                                      splitAmount: splitAmount,
+                                      splitDescription: splitDescription,
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Transaction split successfully')),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error splitting transaction: $e')),
+                                    );
+                                  }
+                                },
+                                isChild: txn.parentTransactionId != null,
+                                primary: primary,
+                                onBackground: onBackground,
+                                secondary: secondary,
+                                onSecondary: onSecondary,
+                              );
+                            }).toList(),
+                    ),
+                  )
+                ],
               ),
-
-              const SizedBox(height: 12),
-
-             Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  children: recentTransactions.isEmpty
-                      ? [const Text('No transactions yet', style: TextStyle(color: Colors.black45))]
-                      : recentTransactions.map((txn) {
-                       return RecentTransactionModern(
-                        isIncome: txn.effect == 'cr',
-                        description: txn.description,
-                        amount: formatAmount(txn.amount),
-                        date: txn.date,
-                        category: txn.categoryName ?? 'Uncategorized',
-                        onEditCategory: () => _editTransaction(txn),
-                        onSplit: (context, splitAmount, splitDescription) async {
-                          try {
-                            final dao = TransactionDao();
-                            await dao.splitTransaction(
-                              parent: txn,
-                              splitAmount: splitAmount,
-                              splitDescription: splitDescription,
-                              
-                            );
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Transaction split successfully')),
-                            );
-                            
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error splitting transaction: $e')),
-                            );
-                          }
-                        },
-                        isChild: txn.parentTransactionId != null,
-                        primary: primary,
-                        onBackground: onBackground,
-                        secondary: secondary,
-                        onSecondary: onSecondary,
-                      );
-                      }).toList(),
-                ),
-              )
-
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
+
 
 class BankCard extends StatelessWidget {
   final String accountNumber;
@@ -438,7 +452,7 @@ class FilterChipsModern extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(7),
             gradient: isSelected

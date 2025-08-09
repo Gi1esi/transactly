@@ -26,7 +26,7 @@ class FilterChipsModern extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(7),
             gradient: isSelected
@@ -47,7 +47,7 @@ class FilterChipsModern extends StatelessWidget {
               style: TextStyle(
                 color: isSelected ? Colors.white : primary,
                 fontWeight: FontWeight.w700,
-                fontSize: 13,
+                fontSize: 12,
                 fontFamily: 'Poppins',
               ),
             ),

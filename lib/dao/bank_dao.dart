@@ -56,5 +56,15 @@ Future<void> updateSmsAddress(int bankId, String newAddress) async {
       whereArgs: [bankId],
     );
   }
+  Future<Bank?> getBankById(int bankId) async { // Keep non-nullable parameter
+    final db = await dbHelper.database;
+    final maps = await db.query(
+      'banks',
+      where: 'bank_id = ?',
+      whereArgs: [bankId],
+      limit: 1,
+    );
+    return maps.isNotEmpty ? Bank.fromMap(maps.first) : null;
+  }
 
 }

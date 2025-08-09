@@ -48,22 +48,6 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
-  void _updateUserInfo() async {
-    if (_user != null) {
-      final updatedUser = User(
-        userId: _user!.userId,
-        firstName: _firstNameController.text,
-        lastName: _lastNameController.text,
-      );
-      await userDao.updateUser(updatedUser);
-      setState(() {
-        _user = updatedUser;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User info updated')),
-      );
-    }
-  }
 
   void _setActiveAccount(int accountId) async {
     await accountDao.setActiveAccount(accountId);
@@ -83,8 +67,8 @@ class _SettingsPageState extends State<SettingsPage> {
           final banks = snapshot.data ?? [];
           return AlertDialog(
             title: const Text('Add New Account'),
-            content: SingleChildScrollView(  // added this
-              child: ConstrainedBox(           // added this
+            content: SingleChildScrollView(  
+              child: ConstrainedBox(           
                 constraints: BoxConstraints(maxHeight: 200),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -112,7 +96,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         );
                       }).toList(),
                       onChanged: (bank) {
-                        FocusScope.of(context).unfocus();  // dismiss keyboard on select
+                        FocusScope.of(context).unfocus(); 
                         selectedBank = bank;
                       },
                     ),
@@ -128,9 +112,16 @@ class _SettingsPageState extends State<SettingsPage> {
               ElevatedButton(
                 onPressed: () async {
                   if (accController.text.isNotEmpty && selectedBank != null) {
-                    await accountDao.insertAccount(Account(
+                     final users = await userDao.getAllUsers();
+    
+                      if (users.isEmpty) {
+                        throw Exception('No users exist in database');
+                      }
+                      final firstUserId = users.first.userId!;
+                      await accountDao.insertAccount(Account(
                       accountNumber: accController.text,
                       bankId: selectedBank!.bankId,
+                      userId: firstUserId, 
                       isActive: false,
                     ));
                     Navigator.pop(context);

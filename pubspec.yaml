@@ -39,6 +39,9 @@ dependencies:
   sqflite: ^2.3.0
   url_launcher: ^6.1.10
   local_auth: ^2.1.5
+  provider: ^6.1.2
+  printing: ^5.10.0
+  pdf: ^3.10.0
   
   # Later: telephony (for real SMS reading), but skip for MVP
 
