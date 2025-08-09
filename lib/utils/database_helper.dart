@@ -87,10 +87,15 @@ class DatabaseHelper {
           (is_split_child = 0 AND parent_transaction_id IS NULL)
         ),
 
+      
         FOREIGN KEY (category) REFERENCES categories(category_id) ON DELETE SET NULL ON UPDATE CASCADE,
         FOREIGN KEY (account) REFERENCES accounts(account_id) ON DELETE SET NULL ON UPDATE CASCADE,
         FOREIGN KEY (parent_transaction_id) REFERENCES transactions(transaction_id) ON DELETE CASCADE ON UPDATE CASCADE
       )
+    ''');
+
+    await db.execute('''
+      CREATE UNIQUE INDEX idx_transactions_trans_id ON transactions(trans_id)
     ''');
 
 
