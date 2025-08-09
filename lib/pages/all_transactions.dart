@@ -17,6 +17,8 @@ class _SummaryPageState extends State<SummaryPage> {
   final List<String> filters = ['1D', '1W', '1M', '6M', 'All', 'Custom'];
   int selectedFilterIndex = 4;
   DateTimeRange? customRange;
+  final List<String> typeFilters = ['All', 'Income', 'Expense'];
+  int selectedTypeFilterIndex = 0; 
 
 
   List<Transaction> allTransactions = [];
@@ -145,6 +147,12 @@ Future<void> _editTransaction(Transaction txn) async {
     }).toList();
   }
 
+    if (selectedTypeFilterIndex == 1) {  // Income
+      tempList = tempList.where((tx) => tx.effect == 'cr').toList();
+    } else if (selectedTypeFilterIndex == 2) { // Expense
+      tempList = tempList.where((tx) => tx.effect != 'cr').toList();
+    }
+
   setState(() {
     filteredTransactions = tempList;
   });
@@ -249,6 +257,7 @@ Future<void> _editTransaction(Transaction txn) async {
                 return ChoiceChip(
                   label: Text(label),
                   selected: isSelected,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   onSelected: (_) => onFilterSelected(index),
                   selectedColor: Theme.of(context).colorScheme.primary,
                   checkmarkColor: Colors.white,
@@ -264,7 +273,33 @@ Future<void> _editTransaction(Transaction txn) async {
               }),
             ),
             const SizedBox(height: 16),
-
+            Wrap(
+              spacing: 12,
+              children: List.generate(typeFilters.length, (index) {
+                final isSelected = index == selectedTypeFilterIndex;
+                final label = typeFilters[index];
+                return ChoiceChip(
+                  label: Text(label),
+                  selected: isSelected,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  onSelected: (_) {
+                    setState(() {
+                      selectedTypeFilterIndex = index;
+                      applyFilter();
+                    });
+                  },
+                  selectedColor: Theme.of(context).colorScheme.primary,
+                  checkmarkColor: Colors.white,
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                );
+              }),
+            ),
+            const SizedBox(height: 16),
             Expanded(
               child: filteredTransactions.isEmpty
                   ? const Center(

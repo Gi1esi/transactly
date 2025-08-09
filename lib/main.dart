@@ -7,6 +7,9 @@ import 'utils/database_helper.dart';
 import 'dao/user_dao.dart';
 import 'utils/read_sms.dart';
 import 'utils/transactions_notifier.dart';
+import 'providers/account_provider.dart';
+import 'package:provider/provider.dart';
+
 // import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 
 
@@ -15,21 +18,24 @@ void main() async {
   // await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
 
   await DatabaseHelper.instance.database;
-
   await BankDao().seedBanks();
 
   final users = await UserDao().getAllUsers();
   if (users.isNotEmpty) {
     await SmsWatcher().startWatching();
   }
+
   runApp(
-  AnimatedBuilder(
-    animation: TransactionsNotifier.instance,
-    builder: (context, _) => const MyApp(),
-  ),
-  
-);
+    ChangeNotifierProvider(
+      create: (_) => AccountProvider()..loadActiveAccount(),
+      child: AnimatedBuilder(
+        animation: TransactionsNotifier.instance,
+        builder: (context, _) => const MyApp(),
+      ),
+    ),
+  );
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

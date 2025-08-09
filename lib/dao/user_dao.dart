@@ -30,4 +30,17 @@ class UserDao {
     final db = await dbHelper.database;
     return await db.delete('users', where: 'user_id = ?', whereArgs: [userId]);
   }
+  // Add to UserDao
+Future<User?> getUserById(int? userId) async {
+    if (userId == null) return null;
+    
+    final db = await dbHelper.database;
+    final maps = await db.query(
+      'users',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      limit: 1,
+    );
+    return maps.isNotEmpty ? User.fromMap(maps.first) : null;
+  }
 }

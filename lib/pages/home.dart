@@ -115,13 +115,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
 
     final pages = [
-      HomePageWidget(
-        accountNumber: accountNumber ?? '',
-        userName: userName ?? '',
-        bank: bankName ?? '',
-      ),
-      // CategoryAnalysisPage(),
-      DatabaseViewerPage(),
+      HomePageWidget(),
+      CategoryAnalysisPage(),
+      // DatabaseViewerPage(),
       SummaryPage(),
       SettingsPage(),
     ];
