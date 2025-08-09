@@ -38,7 +38,6 @@ class SmsWatcher {
     
     final banks = await BankDao().getAllBanks();
     
-    // 🔧 IMPROVED: Better bank lookup with error handling
     final bankSms = banks.firstWhere(
       (b) => b.bankId == activeAccount.bankId,
       orElse: () {
@@ -60,19 +59,17 @@ class SmsWatcher {
   Future<void> _fetchBankSms(
       String userAccountNumber, String bankAddress, int accountId) async {
     
- 
     print("Fetching SMS for account ID: $accountId");
     
     final lastRead = await AccountDao().getLastReadForAccount(accountId);
     print("Last read timestamp: $lastRead");
     
-    final sixMonthsAgo = DateTime.now().subtract(Duration(days: 3));
+    final sixMonthsAgo = DateTime.now().subtract(Duration(days: 1500)); // Fixed: 6 months = ~180 days
     final cutoff = lastRead != null
         ? DateTime.fromMillisecondsSinceEpoch(lastRead)
         : sixMonthsAgo;
     print("Cutoff date being used: $cutoff");
 
-    // 🔧 IMPROVED: Add error handling for SMS fetching
     List<SmsMessage> messages;
     try {
       messages = await telephony.getInboxSms(
@@ -89,21 +86,18 @@ class SmsWatcher {
     final filtered = messages.where((msg) {
       final msgDate = DateTime.fromMillisecondsSinceEpoch(msg.date ?? 0);
       final accNum = _extractAccountNumber(msg.body);
+      final userAccNum = userAccountNumber.trim(); // ✅ Trim whitespace
 
-      print('Processing message from ${msg.date}');
-      print('Msg date: $msgDate');
-      print('Account number extracted from message: $accNum');
-      print('User account number: $userAccountNumber');
+      print('Comparing: "$accNum" vs "$userAccNum"');
 
       if (!msgDate.isAfter(cutoff)) {
-        print('Skipping message due to date before cutoff ($msgDate <= $cutoff)');
+        print('Skipping: Message date ($msgDate) <= cutoff ($cutoff)');
         return false;
       }
-      if (accNum != userAccountNumber) {
-        print('Skipping message due to account number mismatch (got: $accNum, expected: $userAccountNumber)');
+      if (accNum != userAccNum) { // Now compares trimmed values
+        print('Skipping: Account number mismatch');
         return false;
       }
-      print('✓ Message passes all filters');
       return true;
     }).toList();
 
@@ -113,7 +107,7 @@ class SmsWatcher {
     for (var msg in filtered) {
       print("Processing message body: ${msg.body}");
       
-      final data = _parseTransaction(msg.body);
+      final data = _parseTransaction(msg.body, msg.date ?? DateTime.now().millisecondsSinceEpoch); // Pass SMS timestamp
       if (data == null) {
         print('Failed to parse transaction data from message body');
         continue;
@@ -153,7 +147,6 @@ class SmsWatcher {
       print('No new messages to update last read timestamp.');
     }
     
-  
     if (successfulInserts > 0) {
       TransactionsNotifier.instance.refresh();
     }
@@ -161,29 +154,27 @@ class SmsWatcher {
 
   String? _extractAccountNumber(String? smsBody) {
     if (smsBody == null) return null;
-    
-   
+  
     final patterns = [
-      RegExp(r'Acc[t]?:\s*(\d{6,12})'),           // Original pattern
-      RegExp(r'Account:\s*(\d{6,12})'),           // Alternative pattern
-      RegExp(r'A/C:\s*(\d{6,12})'),               // Another common format
-      RegExp(r'Account\s+No:\s*(\d{6,12})'),      // Account No: format
+      RegExp(r'Acc[t]?:\s*(\d{6,12})'),
+      RegExp(r'Account:\s*(\d{6,12})'),
+      RegExp(r'A/C:\s*(\d{6,12})'),
+      RegExp(r'Account\s+No:\s*(\d{6,12})'),
     ];
     
     for (final pattern in patterns) {
       final match = pattern.firstMatch(smsBody);
       if (match != null) {
-        final accNum = match.group(1);
-        print('Extracted account number using pattern ${pattern.pattern}: $accNum');
+        final accNum = match.group(1)?.trim(); // ✅ Trim whitespace
+        print('Extracted account number: "$accNum"');
         return accNum;
       }
     }
-    
-    print('No account number found in SMS body with any pattern');
+    print('No account number found in SMS body');
     return null;
   }
 
-  Map<String, dynamic>? _parseTransaction(String? smsBody) {
+  Map<String, dynamic>? _parseTransaction(String? smsBody, int smsReceivedTime) {
     if (smsBody == null) {
       print('SMS body is null');
       return null;
@@ -195,10 +186,8 @@ class SmsWatcher {
 
       print('Parsing SMS lines: ${lines.join(' | ')}');
 
-      final amtMatch = RegExp(r'MWK\s*([\d,]+(?:\.\d+)?)(CR|DR)',
-              caseSensitive: false)
-          .firstMatch(text);
-      
+      // Parse amount and effect
+      final amtMatch = RegExp(r'MWK\s*([\d,]+(?:\.\d+)?)(CR|DR)', caseSensitive: false).firstMatch(text);
       if (amtMatch == null) {
         print('No amount pattern found in SMS');
         return null;
@@ -207,28 +196,31 @@ class SmsWatcher {
       final amount = double.parse(amtMatch.group(1)!.replaceAll(',', ''));
       final effect = amtMatch.group(2)!.toLowerCase();
 
-      final refLine =
-          lines.firstWhere((l) => l.startsWith('Ref:'), orElse: () => '');
+      // Parse transaction ID
+      final refLine = lines.firstWhere((l) => l.startsWith('Ref:'), orElse: () => '');
       final transId = refLine.isNotEmpty
           ? refLine.substring(4).split('\\').first.trim()
           : 'TXN-${DateTime.now().millisecondsSinceEpoch}';
 
-      final descLine =
-          lines.firstWhere((l) => l.startsWith('Desc:'), orElse: () => '');
-      final description =
-          descLine.isNotEmpty ? descLine.substring(5).trim() : null;
+      // Parse description
+      final descLine = lines.firstWhere((l) => l.startsWith('Desc:'), orElse: () => '');
+      final description = descLine.isNotEmpty ? descLine.substring(5).trim() : null;
 
-      final dateLine =
-          lines.firstWhere((l) => l.startsWith('Date/Time:'), orElse: () => '');
-      DateTime date = DateTime.now();
+      // Parse date (prioritize SMS body, fall back to received time)
+      DateTime date;
+      final dateLine = lines.firstWhere((l) => l.startsWith('Date/Time:'), orElse: () => '');
       if (dateLine.isNotEmpty) {
         final dateStr = dateLine.substring(10).trim();
         try {
-          final formatter = DateFormat('dd/MM/yy HH:mm');
-          date = formatter.parse(dateStr);
+          date = DateFormat('dd/MM/yy HH:mm').parse(dateStr);
+          print('Using parsed SMS body date: $date');
         } catch (e) {
-          print('Failed to parse date "$dateStr": $e, using current time');
+          print('Failed to parse SMS body date, using received time');
+          date = DateTime.fromMillisecondsSinceEpoch(smsReceivedTime);
         }
+      } else {
+        date = DateTime.fromMillisecondsSinceEpoch(smsReceivedTime);
+        print('No date in SMS body, using received time: $date');
       }
 
       print('✓ Parsed transaction - ID: $transId, Amount: $amount, Effect: $effect, Date: $date');
