@@ -352,7 +352,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
               );
             }).toList(),
-            const Divider(height: 32),
+            Divider(
+              height: 32,
+              color: Theme.of(context).primaryColor,
+            ),
             Align(
               alignment: Alignment.centerRight,
               child: OutlinedButton.icon(
@@ -362,6 +365,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  side: BorderSide(color: Theme.of(context).primaryColor),
                 ),
               ),
             )

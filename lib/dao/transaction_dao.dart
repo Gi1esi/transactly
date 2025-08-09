@@ -1,11 +1,21 @@
 import '../models/transaction_model.dart';
 import '../utils/database_helper.dart';
+import 'account_dao.dart';
 
 class TransactionDao {
   final dbHelper = DatabaseHelper.instance;
+  final AccountDao _accountDao = AccountDao();
 
   Future<int> insertTransaction(Transaction tx) async {
     final db = await dbHelper.database;
+    
+    // Check for existing transaction
+    final exists = await transactionExists(tx.transId);
+    if (exists) {
+      print('⚠️ Transaction already exists: ${tx.transId}');
+      return 0;
+    }
+    
     return await db.insert('transactions', tx.toMap());
   }
 
@@ -70,13 +80,19 @@ class TransactionDao {
 
   Future<List<Transaction>> getAllTransactions() async {
     final db = await dbHelper.database;
+    final activeAccount = await _accountDao.getActiveAccount();
+
+    if (activeAccount == null) {
+      return []; // Or throw Exception("No active account")
+    }
 
     final result = await db.rawQuery('''
       SELECT t.*, c.name AS categoryName
       FROM transactions t
       LEFT JOIN categories c ON t.category = c.category_id
+      WHERE t.account = ?
       ORDER BY t.date DESC
-    ''');
+    ''', [activeAccount.accountId]);
 
     return result.map((m) => Transaction.fromMap(m)).toList();
   }
@@ -92,6 +108,16 @@ class TransactionDao {
       return Transaction.fromMap(maps.first);
     }
     return null;
+  }
+  Future<bool> transactionExists(String transId) async {
+    final db = await dbHelper.database;
+    final result = await db.query(
+      'transactions',
+      where: 'trans_id = ?',
+      whereArgs: [transId],
+      limit: 1,
+    );
+    return result.isNotEmpty;
   }
 
   Future<int> deleteTransaction(int id) async {
@@ -116,8 +142,12 @@ class TransactionDao {
   // NEW: Get total income/expense based on effect (cr or dr)
   Future<double> getTotalByEffect(String effect, {DateTime? startDate}) async {
     final db = await dbHelper.database;
-    String where = 'effect = ?';
-    List<Object?> args = [effect];
+    final activeAccount = await _accountDao.getActiveAccount();
+
+    if (activeAccount == null) return 0.0;
+
+    String where = 'effect = ? AND account = ?';
+    List<Object?> args = [effect, activeAccount.accountId];
 
     if (startDate != null) {
       where += ' AND date >= ?';
@@ -138,14 +168,20 @@ class TransactionDao {
   // NEW: Get recent transactions with a limit
   Future<List<Transaction>> getRecentTransactions({int limit = 10}) async {
     final db = await dbHelper.database;
+    final activeAccount = await _accountDao.getActiveAccount();
+
+    if (activeAccount == null) {
+      return [];
+    }
 
     final result = await db.rawQuery('''
       SELECT t.*, c.name AS categoryName
       FROM transactions t
       LEFT JOIN categories c ON t.category = c.category_id
+      WHERE t.account = ?
       ORDER BY t.date DESC
       LIMIT ?
-    ''', [limit]);
+    ''', [activeAccount.accountId, limit]);
 
     return result.map((m) => Transaction.fromMap(m)).toList();
   }

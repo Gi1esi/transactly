@@ -64,7 +64,7 @@ class SmsWatcher {
     final lastRead = await AccountDao().getLastReadForAccount(accountId);
     print("Last read timestamp: $lastRead");
     
-    final sixMonthsAgo = DateTime.now().subtract(Duration(days: 1500)); // Fixed: 6 months = ~180 days
+    final sixMonthsAgo = DateTime.now().subtract(Duration(days: 1500)); 
     final cutoff = lastRead != null
         ? DateTime.fromMillisecondsSinceEpoch(lastRead)
         : sixMonthsAgo;
@@ -86,7 +86,7 @@ class SmsWatcher {
     final filtered = messages.where((msg) {
       final msgDate = DateTime.fromMillisecondsSinceEpoch(msg.date ?? 0);
       final accNum = _extractAccountNumber(msg.body);
-      final userAccNum = userAccountNumber.trim(); // ✅ Trim whitespace
+      final userAccNum = userAccountNumber.trim(); 
 
       print('Comparing: "$accNum" vs "$userAccNum"');
 
@@ -94,7 +94,7 @@ class SmsWatcher {
         print('Skipping: Message date ($msgDate) <= cutoff ($cutoff)');
         return false;
       }
-      if (accNum != userAccNum) { // Now compares trimmed values
+      if (accNum != userAccNum) { 
         print('Skipping: Account number mismatch');
         return false;
       }
@@ -107,7 +107,7 @@ class SmsWatcher {
     for (var msg in filtered) {
       print("Processing message body: ${msg.body}");
       
-      final data = _parseTransaction(msg.body, msg.date ?? DateTime.now().millisecondsSinceEpoch); // Pass SMS timestamp
+      final data = _parseTransaction(msg.body, msg.date ?? DateTime.now().millisecondsSinceEpoch);
       if (data == null) {
         print('Failed to parse transaction data from message body');
         continue;
@@ -123,9 +123,13 @@ class SmsWatcher {
       );
 
       try {
-        await _txDao.insertTransaction(tx);
-        successfulInserts++;
-        print('✓ Inserted transaction: ${tx.transId}');
+        final inserted = await _txDao.insertTransaction(tx);
+        if (inserted > 0) {
+          successfulInserts++;
+          print('✓ Inserted transaction: ${tx.transId}');
+        } else {
+          print('⏩ Skipped duplicate transaction: ${tx.transId}');
+        }
       } catch (e) {
         print('✗ DB insert failed for transaction ${tx.transId}: $e');
       }
