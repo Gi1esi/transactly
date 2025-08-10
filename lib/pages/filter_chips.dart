@@ -26,9 +26,9 @@ class FilterChipsModern extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(7),
+            borderRadius: BorderRadius.circular(18),
             gradient: isSelected
                 ? LinearGradient(
                     colors: [primary.withOpacity(0.9), primary],
@@ -37,7 +37,7 @@ class FilterChipsModern extends StatelessWidget {
                   )
                 : null,
             color: isSelected ? null : Colors.transparent,
-            border: Border.all(color: primary, width: 2),
+            border: Border.all(color: primary, width: 0.2),
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
