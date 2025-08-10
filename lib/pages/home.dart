@@ -189,7 +189,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               label: 'All Transactions',
             ),
              BottomNavigationBarItem(
-              icon: Icon(Icons.analytics_outlined),
+              icon: Icon(Icons.settings_outlined),
               label: 'Settings',
             ),
             
