@@ -1,6 +1,7 @@
 import '../models/transaction_model.dart';
 import '../utils/database_helper.dart';
 import 'account_dao.dart';
+import '../services/budget_service.dart';
 
 class TransactionDao {
   final dbHelper = DatabaseHelper.instance;
@@ -8,16 +9,25 @@ class TransactionDao {
 
   Future<int> insertTransaction(Transaction tx) async {
     final db = await dbHelper.database;
-    
-    // Check for existing transaction
     final exists = await transactionExists(tx.transId);
+    
     if (exists) {
       print('⚠️ Transaction already exists: ${tx.transId}');
       return 0;
     }
-    
-    return await db.insert('transactions', tx.toMap());
+
+    // Insert the transaction
+    final id = await db.insert('transactions', tx.toMap());
+
+    // After inserting, check budget for the category (if present)
+    if (tx.category != null) {
+      // Make sure BudgetService is initialized somewhere in your app startup
+      await BudgetService().checkBudgetAfterTransaction(categoryId: tx.category!);
+    }
+
+    return id;
   }
+
 
   Future<int> splitTransaction({
     required Transaction parent,
@@ -190,4 +200,21 @@ class TransactionDao {
     final db = await dbHelper.database;
     return await db.delete('transactions');
   }
+  Future<double> getTotalForCategoryMonth(int categoryName, int month, int year) async {
+  final db = await dbHelper.database;
+  final result = await db.rawQuery('''
+    SELECT SUM(amount) as total
+    FROM transactions
+    WHERE categoryName = ?
+      AND strftime('%m', date) = ?
+      AND strftime('%Y', date) = ?
+  ''', [
+    categoryName,
+    month.toString().padLeft(2, '0'), 
+    year.toString()
+  ]);
+
+  return (result.first['total'] as num?)?.toDouble() ?? 0.0;
+}
+
 }

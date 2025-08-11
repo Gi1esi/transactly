@@ -10,7 +10,8 @@ import '../models/account_model.dart';
 import '../models/bank_model.dart';
 import 'all_transactions.dart';
 import 'settings_page.dart';
-
+import '../services/budget_service.dart';
+import 'budgets.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -46,6 +47,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     _animationController.forward();
     _loadUserAndAccount();
+    
   }
 
   Future<void> _loadUserAndAccount() async {
@@ -117,9 +119,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final pages = [
       HomePageWidget(),
       CategoryAnalysisPage(),
-      // DatabaseViewerPage(),
-      SummaryPage(),
-      SettingsPage(),
+      BudgetsPage(),
+      DatabaseViewerPage(),
+      // SummaryPage(),
+      // SettingsPage(),
     ];
 
     return SafeArea(

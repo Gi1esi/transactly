@@ -9,6 +9,7 @@ import 'utils/read_sms.dart';
 import 'utils/transactions_notifier.dart';
 import 'providers/account_provider.dart';
 import 'package:provider/provider.dart';
+import 'services/budget_service.dart';
 
 // import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 
@@ -24,7 +25,7 @@ void main() async {
   if (users.isNotEmpty) {
     await SmsWatcher().startWatching();
   }
-
+  await BudgetService().init();
   runApp(
     ChangeNotifierProvider(
       create: (_) => AccountProvider()..loadActiveAccount(),
