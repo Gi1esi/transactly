@@ -64,7 +64,7 @@ class SmsWatcher {
     final lastRead = await AccountDao().getLastReadForAccount(accountId);
     print("Last read timestamp: $lastRead");
     
-    final sixMonthsAgo = DateTime.now().subtract(Duration(days: 1500)); 
+    final sixMonthsAgo = DateTime.now().subtract(Duration(days: 1200)); 
     final cutoff = lastRead != null
         ? DateTime.fromMillisecondsSinceEpoch(lastRead)
         : sixMonthsAgo;

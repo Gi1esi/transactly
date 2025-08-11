@@ -17,7 +17,8 @@ class _DatabaseViewerPageState extends State<DatabaseViewerPage> {
     'accounts',
     'categories',
     'transactions',
-    'settings'
+    'settings',
+    'budgets',
   ];
 
   @override

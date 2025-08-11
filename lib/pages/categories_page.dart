@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'manage_categories.dart';
 import '../dao/category_dao.dart';
 import 'filter_chips.dart';
+import '../dao/budget_dao.dart';
+import '../models/budget_model.dart';
 
 class CategoryAnalysisPage extends StatefulWidget {
   const CategoryAnalysisPage({super.key});
@@ -325,43 +327,49 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
   }
 
   Widget _buildCategoryList(List<Map<String, dynamic>> categories, double total) {
-    return Column(
-      children: categories.map((cat) {
-        final amount = cat['total'] as double;
-        final percent = total == 0 ? 0 : (amount / total) * 100;
-        final hex = cat['color_hex'] as String?;
-        final color = (hex != null && hex.length >= 7)
-            ? Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000)
-            : const Color.fromARGB(255, 31, 163, 154);
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.circle, color: color, size: 16),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  cat['categoryName'] ?? 'Uncategorized',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+  return Column(
+    children: categories.map((cat) {
+      final hex = cat['color_hex'] as String?;
+      final color = (hex != null && hex.length >= 7)
+          ? Color(int.parse(hex.substring(1, 7), radix: 16) + 0xFF000000)
+          : const Color.fromARGB(255, 31, 163, 154);
+
+      final amount = (cat['total'] as num).toDouble();
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.circle, color: color, size: 16),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                cat['categoryName'] ?? 'Uncategorized',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
                 ),
               ),
-              Text(
-                'MWK ${amount.toStringAsFixed(0)}',
-                style: TextStyle(fontWeight: FontWeight.bold, color: color),
-              ),
-              const SizedBox(width: 8),
-              Text('${percent.toStringAsFixed(1)}%', style: const TextStyle(color: Colors.black54, fontSize: 13)),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
+            ),
+            Text(
+              'MWK ${amount.toStringAsFixed(0)}',
+              style: TextStyle(fontWeight: FontWeight.bold, color: color),
+            ),
+          ],
+        ),
+      );
+    }).toList(),
+  );
+}
+
+
+
 
   Widget _buildManageButton(bool isExpense, Color primary) {
     return ElevatedButton(
@@ -388,4 +396,41 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage>
       ),
     );
   }
+
+  Future<void> _showSetBudgetDialog({required int catId, Budget? current}) async {
+  final controller = TextEditingController(text: current?.limitAmount.toString() ?? '');
+  final dao = BudgetDao();
+  final now = DateTime.now();
+
+  await showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Set Monthly Budget'),
+      content: TextField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: const InputDecoration(labelText: 'Amount (MWK)'),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        ElevatedButton(
+          onPressed: () async {
+            final val = double.tryParse(controller.text.trim()) ?? 0.0;
+            if (current == null) {
+              final b = Budget(categoryId: catId, period: 'monthly', year: now.year, month: now.month, limitAmount: val);
+              await dao.insertBudget(b);
+            } else {
+              current.limitAmount = val;
+              await dao.updateBudget(current);
+            }
+            Navigator.pop(ctx);
+            setState(() {}); // refresh UI
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    )
+  );
+}
+
 }

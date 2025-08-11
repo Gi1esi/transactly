@@ -67,6 +67,20 @@ class DatabaseHelper {
         color_hex TEXT NOT NULL
       )
     ''');
+    await db.execute('''
+      CREATE TABLE budgets (
+      budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category_id INTEGER NOT NULL,
+      period TEXT NOT NULL,
+      limit_amount REAL NOT NULL,
+      start_date TEXT,
+      end_date TEXT,
+      year INTEGER,
+      month INTEGER,
+      week INTEGER,
+      FOREIGN KEY (category_id) REFERENCES categories (category_id) ON DELETE SET NULL ON UPDATE CASCADE
+    )
+    ''');
 
    await db.execute('''
       CREATE TABLE transactions (
@@ -96,6 +110,7 @@ class DatabaseHelper {
 
     await db.execute('''
       CREATE UNIQUE INDEX idx_transactions_trans_id ON transactions(trans_id)
+      CREATE UNIQUE INDEX idx_unique_budget_period ON budgets (category_id, period, start_date);
     ''');
 
 
