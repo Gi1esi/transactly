@@ -8,7 +8,7 @@ class BudgetDao {
   Future<int> insertBudget(Budget budget) async {
     final db = await dbHelper.database;
     
-    // Check for overlapping budgets
+    
     if (budget.startDate != null && budget.endDate != null) {
       final overlaps = await hasOverlappingBudget(
         budget.categoryId,
@@ -39,7 +39,6 @@ class BudgetDao {
 }) async {
   final db = await dbHelper.database;
   
-  // Start with base query
   var query = '''
     SELECT COUNT(*) as count FROM budgets
     WHERE category_id = ?
@@ -64,7 +63,7 @@ class BudgetDao {
     endDate.toIso8601String(),
   ];
 
-  // Add exclusion for updates if needed
+  
   if (excludeBudgetId != null) {
     query += ' AND budget_id != ?';
     whereArgs.add(excludeBudgetId);
@@ -108,7 +107,19 @@ class BudgetDao {
       whereArgs: [id],
     );
   }
+Future<Budget?> getBudgetById(int budgetId) async {
+  final db = await dbHelper.database;
+  final maps = await db.query(
+    'budgets',
+    where: 'budget_id = ?',
+    whereArgs: [budgetId],
+  );
 
+  if (maps.isNotEmpty) {
+    return Budget.fromMap(maps.first);
+  }
+  return null;
+}
   Future<Budget?> getBudgetForCategory({
     required int categoryId,
     required String period,

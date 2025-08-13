@@ -4,6 +4,8 @@ import '../dao/budget_dao.dart';
 import '../dao/category_dao.dart';
 import '../models/budget_model.dart';
 import '../models/category_model.dart';
+import '../utils/utils.dart';
+import 'create_budget.dart';
 
 class BudgetsPage extends StatefulWidget {
   const BudgetsPage({super.key});
@@ -34,6 +36,23 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
     _tabController = TabController(length: _periods.length, vsync: this);
     _loadBudgets();
   }
+
+  Future<DateTime?> _showDatePickerWithValidation({
+      required BuildContext context,
+      required DateTime? initialDate,
+    }) async {
+      final now = DateTime.now();
+      final firstDate = DateTime(now.year, now.month, now.day);
+      final effectiveInitialDate = initialDate ?? now;
+      
+      return await showDatePicker(
+        context: context,
+        initialDate: effectiveInitialDate.isBefore(firstDate) ? firstDate : effectiveInitialDate,
+        firstDate: firstDate,
+        lastDate: DateTime(2100),
+      );
+    }
+
 
   Future<void> _loadBudgets() async {
     setState(() => _loading = true);
@@ -82,6 +101,14 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
 
     grouped.forEach((period, budgets) {
       budgets.sort((a, b) {
+        // Put editable budgets first
+        final aEditable = _isBudgetEditable(a.budget);
+        final bEditable = _isBudgetEditable(b.budget);
+        if (aEditable != bEditable) {
+          return aEditable ? -1 : 1;
+        }
+        
+        // Then sort by progress
         final aProg = a.budget.limitAmount > 0 ? a.spentAmount / a.budget.limitAmount : 0;
         final bProg = b.budget.limitAmount > 0 ? b.spentAmount / b.budget.limitAmount : 0;
         return bProg.compareTo(aProg);
@@ -100,6 +127,215 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
     return firstDay.add(Duration(days: daysToAdd - firstDay.weekday + 1));
   }
 
+  int _weekNumber(DateTime date) {
+    final firstDayOfYear = DateTime(date.year, 1, 1);
+    final daysPassed = date.difference(firstDayOfYear).inDays;
+    return ((daysPassed + firstDayOfYear.weekday) / 7).ceil();
+  }
+
+  void _navigateToCreateBudget() async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CreateBudgetPage(
+        categoryDao: _categoryDao,
+        budgetDao: _budgetDao,
+        onBudgetCreated: _loadBudgets,
+      ),
+    ),
+  );
+  
+  if (result == true) {
+    _loadBudgets();
+  }
+}
+
+ Future<void> _saveBudgetWithDates({
+  required int categoryId,
+  required String period,
+  required double limitAmount,
+  required DateTime startDate,
+  required DateTime endDate,
+  int? budgetId, // Add this parameter
+}) async {
+  final dao = _budgetDao;
+  
+  // Calculate year/month/week for backward compatibility
+  final year = startDate.year;
+  final month = period == 'monthly' ? startDate.month : null;
+  final week = period == 'weekly' ? _weekNumber(startDate) : null;
+
+  if (budgetId != null) {
+    final existing = await dao.getBudgetById(budgetId);
+    if (existing != null) {
+      existing.limitAmount = limitAmount;
+      existing.startDate = startDate;
+      existing.endDate = endDate;
+      existing.year = year;
+      existing.month = month;
+      existing.week = week;
+      existing.period = period;
+      await dao.updateBudget(existing);
+    }
+  } else {
+    // Insert new budget
+    await dao.insertBudget(Budget(
+      categoryId: categoryId,
+      period: period,
+      limitAmount: limitAmount,
+      startDate: startDate,
+      endDate: endDate,
+      year: year,
+      month: month,
+      week: week,
+    ));
+  }
+}
+  
+  Future<void> _editBudget(_BudgetInfo budgetInfo) async {
+  if (!_isBudgetEditable(budgetInfo.budget)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Cannot edit completed budgets')),
+    );
+    return;
+  }
+
+  final controller = TextEditingController(text: budgetInfo.budget.limitAmount.toString());
+  String selectedPeriod = budgetInfo.budget.period;
+  DateTime? customStartDate = budgetInfo.budget.startDate;
+  DateTime? customEndDate = budgetInfo.budget.endDate;
+  final now = DateTime.now();
+  String? errorMessage;
+
+  await showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (context, setState) {
+        Widget buildDatePickers() {
+          final firstDate = DateTime(now.year, now.month, now.day);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    errorMessage!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                  ),
+                ),
+              TextButton(
+                onPressed: () async {
+                  final picked = await _showDatePickerWithValidation(
+                    context: context,
+                    initialDate: customStartDate,
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      customStartDate = picked;
+                      customEndDate = addPeriodToDate(picked, selectedPeriod);
+                      errorMessage = null; // Clear error when dates change
+                    });
+                  }
+                },
+                child: Text(
+                  customStartDate == null
+                      ? 'Select start date'
+                      : selectedPeriod == 'weekly'
+                          ? 'Week: ${DateFormat.yMd().format(customStartDate!)} - ${DateFormat.yMd().format(customEndDate!)}'
+                          : selectedPeriod == 'monthly'
+                              ? 'Month: ${DateFormat.yMd().format(customStartDate!)} - ${DateFormat.yMd().format(customEndDate!)}'
+                              : 'Year: ${DateFormat.yMd().format(customStartDate!)} - ${DateFormat.yMd().format(customEndDate!)}',
+                ),
+              ),
+            ],
+          );
+        }
+
+        return AlertDialog(
+          title: Text('Edit Budget for ${budgetInfo.category.name}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedPeriod,
+                  decoration: const InputDecoration(labelText: 'Duration'),
+                  items: const [
+                    DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
+                    DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
+                    DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null && customStartDate != null) {
+                      setState(() {
+                        selectedPeriod = v;
+                        customEndDate = addPeriodToDate(customStartDate!, selectedPeriod);
+                        errorMessage = null; // Clear error when period changes
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: selectedPeriod == 'yearly'
+                        ? 'Yearly limit (MWK)'
+                        : (selectedPeriod == 'weekly' ? 'Weekly limit (MWK)' : 'Monthly limit (MWK)'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                buildDatePickers(),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final val = double.tryParse(controller.text.trim()) ?? 0.0;
+                if (val <= 0 || customStartDate == null || customEndDate == null) {
+                  setState(() {
+                    errorMessage = 'Please fill all fields correctly';
+                  });
+                  return;
+                }
+
+                try {
+                  await _saveBudgetWithDates(
+                    categoryId: budgetInfo.category.categoryId!,
+                    period: selectedPeriod,
+                    limitAmount: val,
+                    startDate: customStartDate!,
+                    endDate: customEndDate!,
+                    budgetId: budgetInfo.budget.budgetId,
+                  );
+
+                  Navigator.pop(ctx);
+                  _loadBudgets();
+                } catch (e) {
+                  setState(() {
+                    errorMessage = e.toString();
+                  });
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -123,6 +359,10 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
           indicatorColor: theme.colorScheme.primary,
           tabs: _periods.map((p) => Tab(text: p[0].toUpperCase() + p.substring(1))).toList(),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+         onPressed: _navigateToCreateBudget,
+         child: const Icon(Icons.add),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -157,6 +397,7 @@ class _BudgetsPageState extends State<BudgetsPage> with SingleTickerProviderStat
                       progress: progress,
                       remaining: remaining,
                       isOverBudget: isOverBudget,
+                      onTap: () => _editBudget(info),
                     );
                   },
                 );
@@ -173,6 +414,7 @@ class BudgetCard extends StatelessWidget {
   final double progress;
   final double remaining;
   final bool isOverBudget;
+  final VoidCallback? onTap;
 
   const BudgetCard({
     super.key,
@@ -182,13 +424,67 @@ class BudgetCard extends StatelessWidget {
     required this.progress,
     required this.remaining,
     required this.isOverBudget,
+    this.onTap,
   });
+
+  // Helper method to safely format date range
+  Widget _buildDateRangeText(BuildContext context, ThemeData theme) {
+    final hasDates = budget.startDate != null && budget.endDate != null;
+    final status = _getBudgetStatus();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, left: 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasDates)
+            Text(
+              '${DateFormat('MMM d, y').format(budget.startDate!)} - ${DateFormat('MMM d, y').format(budget.endDate!)}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey[500],
+                fontWeight: FontWeight.w400,
+              ),
+            )
+          else
+            Text(
+              'No date range set',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          if (!_isBudgetEditable(budget))
+            Text(
+              status,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _getBudgetStatus() {
+    if (budget.endDate == null) return 'No end date';
+    
+    final now = DateTime.now();
+    if (budget.endDate!.isBefore(now)) {
+      return 'Completed';
+    }
+    if (budget.startDate != null && budget.startDate!.isAfter(now)) {
+      return 'Upcoming';
+    }
+    return 'Active';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = _colorFromHex(category.colorHex);
     final currencyFmt = NumberFormat.currency(locale: 'en_US', symbol: 'MWK ', decimalDigits: 0);
+    final isEditable = _isBudgetEditable(budget);
 
     return Material(
       color: theme.colorScheme.surface,
@@ -197,7 +493,7 @@ class BudgetCard extends StatelessWidget {
       shadowColor: Colors.black12,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {}, // Add your onTap if needed
+        onTap: isEditable ? onTap : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           child: Column(
@@ -229,17 +525,7 @@ class BudgetCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (budget.startDate != null && budget.endDate != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6, left: 40),
-                  child: Text(
-                    '${DateFormat.MMMd().format(budget.startDate!)} - ${DateFormat.MMMd().format(budget.endDate!)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[500],
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ),
+              _buildDateRangeText(context, theme),
               const SizedBox(height: 16),
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
@@ -279,59 +565,42 @@ class BudgetCard extends StatelessWidget {
       ),
     );
   }
-  IconData _iconDataFromKey(String key) {
-    switch (key) {
-      case 'fastfood':
-        return Icons.restaurant;
-      case 'grocery':
-        return Icons.receipt;
-      case 'car':
-        return Icons.directions_car;
-      case 'money':
-        return Icons.attach_money;
-      case 'gift':
-        return Icons.card_giftcard;
-      case 'shopping':
-        return Icons.shopping_cart;
-      case 'coffee':
-        return Icons.coffee;
-      case 'movie':
-        return Icons.movie;
-      case 'fitness':
-        return Icons.fitness_center;
-      case 'gas':
-        return Icons.local_gas_station;
-      case 'phone':
-        return Icons.phone_iphone;
-      case 'home':
-        return Icons.home;
-      case 'hospital':
-        return Icons.local_hospital;
-      case 'school':
-        return Icons.school;
-      case 'computer':
-        return Icons.computer;
-      case 'flight':
-        return Icons.flight;
-      case 'pets':
-        return Icons.pets;
-      case 'soccer':
-        return Icons.sports_soccer;
-      case 'music':
-        return Icons.music_note;
-      case 'beach':
-        return Icons.beach_access;
-      default:
-        return Icons.category;
-    }
+}
+bool _isBudgetEditable(Budget budget) {
+  final now = DateTime.now();
+  return budget.endDate == null || budget.endDate!.isAfter(now);
+}
+IconData _iconDataFromKey(String key) {
+  switch (key) {
+    case 'fastfood': return Icons.restaurant;
+    case 'grocery': return Icons.receipt;
+    case 'car': return Icons.directions_car;
+    case 'money': return Icons.attach_money;
+    case 'gift': return Icons.card_giftcard;
+    case 'shopping': return Icons.shopping_cart;
+    case 'coffee': return Icons.coffee;
+    case 'movie': return Icons.movie;
+    case 'fitness': return Icons.fitness_center;
+    case 'gas': return Icons.local_gas_station;
+    case 'phone': return Icons.phone_iphone;
+    case 'home': return Icons.home;
+    case 'hospital': return Icons.local_hospital;
+    case 'school': return Icons.school;
+    case 'computer': return Icons.computer;
+    case 'flight': return Icons.flight;
+    case 'pets': return Icons.pets;
+    case 'soccer': return Icons.sports_soccer;
+    case 'music': return Icons.music_note;
+    case 'beach': return Icons.beach_access;
+    default: return Icons.category;
   }
+}
 
-  Color _colorFromHex(String hex) {
-    final buffer = StringBuffer();
-    if (hex.length == 6 || hex.length == 7) buffer.write('ff');
-    buffer.write(hex.replaceFirst('#', ''));
-    return Color(int.parse(buffer.toString(), radix: 16));
-  }
+Color _colorFromHex(String hex) {
+  final buffer = StringBuffer();
+  if (hex.length == 6 || hex.length == 7) buffer.write('ff');
+  buffer.write(hex.replaceFirst('#', ''));
+  return Color(int.parse(buffer.toString(), radix: 16));
 }
 
 class _BudgetInfo {
