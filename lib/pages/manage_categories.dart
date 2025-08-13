@@ -1,10 +1,7 @@
 // lib/pages/manage_categories_page.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../dao/category_dao.dart';
 import '../models/category_model.dart';
-import '../dao/budget_dao.dart';
-import '../models/budget_model.dart';
 
 class ManageCategoriesPage extends StatefulWidget {
   final bool isExpense;
@@ -17,7 +14,6 @@ class ManageCategoriesPage extends StatefulWidget {
 
 class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
   final CategoryDao _categoryDao = CategoryDao();
-  final BudgetDao _budgetDao = BudgetDao();
   final TextEditingController _controller = TextEditingController();
 
   List<Category> categories = [];
@@ -64,8 +60,6 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
     '#795548', '#009688', '#673AB7', '#FFEB3B', '#CDDC39', '#3F51B5', '#F44336', '#2196F3',
   ];
 
-  final _currencyFmt = NumberFormat.currency(locale: 'en_US', symbol: 'MWK ', decimalDigits: 0);
-
   @override
   void initState() {
     super.initState();
@@ -78,225 +72,6 @@ class _ManageCategoriesPageState extends State<ManageCategoriesPage> {
       categories = allCategories.where((c) => c.type == (widget.isExpense ? 'expense' : 'income')).toList();
     });
   }
-
- 
-  int _weekNumber(DateTime date) {
-    final firstDayOfYear = DateTime(date.year, 1, 1);
-    final daysPassed = date.difference(firstDayOfYear).inDays;
-    return ((daysPassed + firstDayOfYear.weekday) / 7).ceil();
-  }
-
-  Future<void> _showCategoryBudgetDialog(Category category) async {
-  final dao = _budgetDao;
-  final now = DateTime.now();
-
-  String selectedPeriod = 'monthly';
-  double initialAmount = 0.0;
-  DateTime? customStartDate;
-  DateTime? customEndDate;
-
-  // Load existing budget if any
-  final existingBudget = await dao.getBudgetForCategoryMonth(category.categoryId!, now.year, now.month);
-  if (existingBudget != null) {
-    initialAmount = existingBudget.limitAmount;
-    selectedPeriod = existingBudget.period;
-    customStartDate = existingBudget.startDate;
-    customEndDate = existingBudget.endDate;
-  } else {
-    // Default to current date as start date for all periods
-    customStartDate = now;
-    // Set default end dates based on period type
-    if (selectedPeriod == 'weekly') {
-      customEndDate = customStartDate.add(const Duration(days: 6));
-    } else if (selectedPeriod == 'monthly') {
-      customEndDate = DateTime(customStartDate.year, customStartDate.month + 1, 0);
-    } else if (selectedPeriod == 'yearly') {
-      customEndDate = DateTime(customStartDate.year, 12, 31);
-    }
-  }
-
-  final controller = TextEditingController(text: initialAmount > 0 ? initialAmount.toString() : '');
-
-  await showDialog(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (context, setState) {
-        Widget buildDatePickers() {
-          final now = DateTime.now();
-          // Disallow dates before today
-          final firstDate = DateTime(now.year, now.month, now.day);
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextButton(
-                onPressed: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: customStartDate ?? now,
-                    firstDate: firstDate,
-                    lastDate: DateTime(2100),
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      customStartDate = picked;
-                      // Calculate end date based on selected period
-                      if (selectedPeriod == 'weekly') {
-                        customEndDate = picked.add(const Duration(days: 6));
-                      } else if (selectedPeriod == 'monthly') {
-                        // 30 days from start date (or adjust as needed)
-                        customEndDate = picked.add(const Duration(days: 30));
-                      } else if (selectedPeriod == 'yearly') {
-                        // 365 days from start date (accounts for leap years automatically)
-                        customEndDate = picked.add(const Duration(days: 365));
-                      }
-                    });
-                  }
-                },
-                child: Text(
-                  customStartDate == null
-                      ? 'Select start date'
-                      : selectedPeriod == 'weekly'
-                          ? 'Week: ${DateFormat.yMd().format(customStartDate!)} - ${DateFormat.yMd().format(customEndDate!)}'
-                          : selectedPeriod == 'monthly'
-                              ? 'Month: ${DateFormat.yMd().format(customStartDate!)} - ${DateFormat.yMd().format(customEndDate!)}'
-                              : 'Year: ${DateFormat.yMd().format(customStartDate!)} - ${DateFormat.yMd().format(customEndDate!)}',
-                ),
-              ),
-            ],
-          );
-        }
-
-        return AlertDialog(
-          title: Text('Set Budget for ${category.name}'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DropdownButtonFormField<String>(
-                  value: selectedPeriod,
-                  decoration: const InputDecoration(labelText: 'Duration'),
-                  items: const [
-                    DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
-                    DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
-                    DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null && customStartDate != null) {
-                      setState(() {
-                        selectedPeriod = v;
-                        if (selectedPeriod == 'weekly') {
-                          customEndDate = customStartDate!.add(const Duration(days: 6));
-                        } else if (selectedPeriod == 'monthly') {
-                          customEndDate = customStartDate!.add(const Duration(days: 30));
-                        } else if (selectedPeriod == 'yearly') {
-                          customEndDate = customStartDate!.add(const Duration(days: 365));
-                        }
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: selectedPeriod == 'yearly'
-                        ? 'Yearly limit (MWK)'
-                        : (selectedPeriod == 'weekly' ? 'Weekly limit (MWK)' : 'Monthly limit (MWK)'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                buildDatePickers(),
-                const SizedBox(height: 8),
-                Text(
-                  selectedPeriod == 'monthly'
-                      ? 'Budget applies to 1 month starting from selected date.'
-                      : selectedPeriod == 'weekly'
-                          ? 'Budget applies to 7 days starting from selected date.'
-                          : 'Budget applies to 1 year starting from selected date.',
-                  style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () async {
-                final val = double.tryParse(controller.text.trim()) ?? 0.0;
-                if (val <= 0 || customStartDate == null || customEndDate == null) {
-                  Navigator.pop(ctx);
-                  return;
-                }
-
-                await saveBudgetWithDates(
-                  categoryId: category.categoryId!,
-                  period: selectedPeriod,
-                  limitAmount: val,
-                  startDate: customStartDate!,
-                  endDate: customEndDate!,
-                );
-
-                Navigator.pop(ctx);
-                _loadCategories();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    ),
-  );
-}
-
-Future<void> saveBudgetWithDates({
-  required int categoryId,
-  required String period,
-  required double limitAmount,
-  required DateTime startDate,
-  required DateTime endDate,
-}) async {
-  // Use the existing _budgetDao instance instead of direct db access
-  final dao = _budgetDao;
-  
-  // Calculate year/month/week for backward compatibility
-  final year = startDate.year;
-  final month = period == 'monthly' ? startDate.month : null;
-  final week = period == 'weekly' ? _weekNumber(startDate) : null;
-
-  // Check if budget already exists using the DAO
-  final existing = await dao.getBudgetForCategory(
-    categoryId: categoryId,
-    period: period,
-    startDate: startDate,
-    endDate: endDate,
-  );
-
-  if (existing == null) {
-    // Insert new budget
-    await dao.insertBudget(Budget(
-      categoryId: categoryId,
-      period: period,
-      limitAmount: limitAmount,
-      startDate: startDate,
-      endDate: endDate,
-      year: year,
-      month: month,
-      week: week,
-    ));
-  } else {
-    // Update existing budget
-    existing.limitAmount = limitAmount;
-    existing.startDate = startDate;
-    existing.endDate = endDate;
-    existing.year = year;
-    existing.month = month;
-    existing.week = week;
-    await dao.updateBudget(existing);
-  }
-}
 
   Future<void> _addOrEditCategory({Category? existingCategory}) async {
     if (existingCategory != null) {
@@ -495,7 +270,6 @@ Future<void> saveBudgetWithDates({
   @override
   Widget build(BuildContext context) {
     final title = widget.isExpense ? 'Manage Expense Categories' : 'Manage Income Categories';
-    final now = DateTime.now();
 
     return Scaffold(
       appBar: AppBar(
@@ -524,43 +298,22 @@ Future<void> saveBudgetWithDates({
                 itemBuilder: (context, index) {
                   final category = categories[index];
 
-                  return FutureBuilder<Budget?>(
-                    future: _budgetDao.getBudgetForCategoryMonth(category.categoryId ?? -1, now.year, now.month),
-                    builder: (context, snap) {
-                      final budget = snap.data;
-                      final budgetText = (budget == null)
-                          ? 'No budget'
-                          : '${_currencyFmt.format(budget.limitAmount)} / ${budget.period == 'monthly' ? 'mo' : (budget.period == 'weekly' ? 'wk' : 'yr')}';
-
-                      return ListTile(
-                        leading: Icon(_iconDataFromKey(category.iconKey), color: _colorFromHex(category.colorHex)),
-                        title: Text(category.name, style: const TextStyle(color: Colors.black87)),
-                        subtitle: Text(budgetText, style: TextStyle(color: Colors.black54)),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blueAccent),
-                              onPressed: () => _addOrEditCategory(existingCategory: category),
-                            ),
-                            TextButton(
-                              onPressed: () => _showCategoryBudgetDialog(category),
-                              child: Text(
-                                budget == null ? 'Set Budget' : 'Budget: ${_currencyFmt.format(budget.limitAmount)}',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.redAccent),
-                              onPressed: () => _deleteCategory(index),
-                            ),
-                          ],
+                  return ListTile(
+                    leading: Icon(_iconDataFromKey(category.iconKey), color: _colorFromHex(category.colorHex)),
+                    title: Text(category.name, style: const TextStyle(color: Colors.black87)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                          onPressed: () => _addOrEditCategory(existingCategory: category),
                         ),
-                      );
-                    },
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.redAccent),
+                          onPressed: () => _deleteCategory(index),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -568,77 +321,6 @@ Future<void> saveBudgetWithDates({
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Simple month/year picker widget (used for monthly budget selection)
-class MonthYearPicker extends StatefulWidget {
-  final DateTime initialDate;
-  final ValueChanged<DateTime> onChanged;
-
-  const MonthYearPicker({super.key, required this.initialDate, required this.onChanged});
-
-  @override
-  State<MonthYearPicker> createState() => _MonthYearPickerState();
-}
-
-class _MonthYearPickerState extends State<MonthYearPicker> {
-  late int selectedYear;
-  late int selectedMonth;
-
-  @override
-  void initState() {
-    super.initState();
-    selectedYear = widget.initialDate.year;
-    selectedMonth = widget.initialDate.month;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final years = List.generate(21, (i) => DateTime.now().year - 10 + i);
-    final months = List.generate(12, (i) => i + 1);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Select Month and Year:', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
-        Row(
-          children: [
-            DropdownButton<int>(
-              value: selectedMonth,
-              items: months
-                  .map((m) => DropdownMenuItem(
-                        value: m,
-                        child: Text(DateFormat.MMMM().format(DateTime(0, m))),
-                      ))
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() => selectedMonth = v);
-                  widget.onChanged(DateTime(selectedYear, selectedMonth, 1));
-                }
-              },
-            ),
-            const SizedBox(width: 20),
-            DropdownButton<int>(
-              value: selectedYear,
-              items: years
-                  .map((y) => DropdownMenuItem(
-                        value: y,
-                        child: Text(y.toString()),
-                      ))
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) {
-                  setState(() => selectedYear = v);
-                  widget.onChanged(DateTime(selectedYear, selectedMonth, 1));
-                }
-              },
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
